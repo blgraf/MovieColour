@@ -1,0 +1,285 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <!-- 
+    Microsoft ResX Schema 
+    
+    Version 2.0
+    
+    The primary goals of this format is to allow a simple XML format 
+    that is mostly human readable. The generation and parsing of the 
+    various data types are done through the TypeConverter classes 
+    associated with the data types.
+    
+    Example:
+    
+    ... ado.net/XML headers & schema ...
+    <resheader name="resmimetype">text/microsoft-resx</resheader>
+    <resheader name="version">2.0</resheader>
+    <resheader name="reader">System.Resources.ResXResourceReader, System.Windows.Forms, ...</resheader>
+    <resheader name="writer">System.Resources.ResXResourceWriter, System.Windows.Forms, ...</resheader>
+    <data name="Name1"><value>this is my long string</value><comment>this is a comment</comment></data>
+    <data name="Color1" type="System.Drawing.Color, System.Drawing">Blue</data>
+    <data name="Bitmap1" mimetype="application/x-microsoft.net.object.binary.base64">
+        <value>[base64 mime encoded serialized .NET Framework object]</value>
+    </data>
+    <data name="Icon1" type="System.Drawing.Icon, System.Drawing" mimetype="application/x-microsoft.net.object.bytearray.base64">
+        <value>[base64 mime encoded string representing a byte array form of the .NET Framework object]</value>
+        <comment>This is a comment</comment>
+    </data>
+                
+    There are any number of "resheader" rows that contain simple 
+    name/value pairs.
+    
+    Each data row contains a name, and value. The row also contains a 
+    type or mimetype. Type corresponds to a .NET class that support 
+    text/value conversion through the TypeConverter architecture. 
+    Classes that don't support this are serialized and stored with the 
+    mimetype set.
+    
+    The mimetype is used for serialized objects, and tells the 
+    ResXResourceReader how to depersist the object. This is currently not 
+    extensible. For a given mimetype the value must be set accordingly:
+    
+    Note - application/x-microsoft.net.object.binary.base64 is the format 
+    that the ResXResourceWriter will generate, however the reader can 
+    read any of the formats listed below.
+    
+    mimetype: application/x-microsoft.net.object.binary.base64
+    value   : The object must be serialized with 
+            : System.Runtime.Serialization.Formatters.Binary.BinaryFormatter
+            : and then encoded with base64 encoding.
+    
+    mimetype: application/x-microsoft.net.object.soap.base64
+    value   : The object must be serialized with 
+            : System.Runtime.Serialization.Formatters.Soap.SoapFormatter
+            : and then encoded with base64 encoding.
+
+    mimetype: application/x-microsoft.net.object.bytearray.base64
+    value   : The object must be serialized into a byte array 
+            : using a System.ComponentModel.TypeConverter
+            : and then encoded with base64 encoding.
+    -->
+  <xsd:schema id="root" xmlns="" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:msdata="urn:schemas-microsoft-com:xml-msdata">
+    <xsd:import namespace="http://www.w3.org/XML/1998/namespace" />
+    <xsd:element name="root" msdata:IsDataSet="true">
+      <xsd:complexType>
+        <xsd:choice maxOccurs="unbounded">
+          <xsd:element name="metadata">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" />
+              </xsd:sequence>
+              <xsd:attribute name="name" use="required" type="xsd:string" />
+              <xsd:attribute name="type" type="xsd:string" />
+              <xsd:attribute name="mimetype" type="xsd:string" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="assembly">
+            <xsd:complexType>
+              <xsd:attribute name="alias" type="xsd:string" />
+              <xsd:attribute name="name" type="xsd:string" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="data">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+                <xsd:element name="comment" type="xsd:string" minOccurs="0" msdata:Ordinal="2" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" msdata:Ordinal="1" />
+              <xsd:attribute name="type" type="xsd:string" msdata:Ordinal="3" />
+              <xsd:attribute name="mimetype" type="xsd:string" msdata:Ordinal="4" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="resheader">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" />
+            </xsd:complexType>
+          </xsd:element>
+        </xsd:choice>
+      </xsd:complexType>
+    </xsd:element>
+  </xsd:schema>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <data name="General" xml:space="preserve">
+    <value>General</value>
+  </data>
+  <data name="InputFile" xml:space="preserve">
+    <value>Input file</value>
+  </data>
+  <data name="ChooseFile" xml:space="preserve">
+    <value>Choose file</value>
+  </data>
+  <data name="AnalyseXthFrame" xml:space="preserve">
+    <value>Analyse every X-th frame</value>
+  </data>
+  <data name="WorkingScale" xml:space="preserve">
+    <value>Working scale</value>
+  </data>
+  <data name="OutputResolution" xml:space="preserve">
+    <value>Output images resolution</value>
+  </data>
+  <data name="Start" xml:space="preserve">
+    <value>Start</value>
+  </data>
+  <data name="AnalysisSelection" xml:space="preserve">
+    <value>Analysis selection</value>
+  </data>
+  <data name="CreateImagesUsingMethods" xml:space="preserve">
+    <value>Create images using the selected methods</value>
+  </data>
+  <data name="Buckets" xml:space="preserve">
+    <value>Buckets</value>
+  </data>
+  <data name="BucketsAvgTotal" xml:space="preserve">
+    <value>Average of all colours</value>
+  </data>
+  <data name="BucketsAvgMinMax" xml:space="preserve">
+    <value>Average of 'blackest' and 'whitest' colour</value>
+  </data>
+  <data name="BucketsMedian" xml:space="preserve">
+    <value>Median</value>
+  </data>
+  <data name="AvgFrame" xml:space="preserve">
+    <value>Average of the entire frame</value>
+  </data>
+  <data name="MostFrequent" xml:space="preserve">
+    <value>Most Frequent colour</value>
+  </data>
+  <data name="MedianFrame" xml:space="preserve">
+    <value>Median of the entire frame</value>
+  </data>
+  <data name="AdvancedOptions" xml:space="preserve">
+    <value>Advanced options</value>
+  </data>
+  <data name="BucketCount" xml:space="preserve">
+    <value>Bucket count (per axis)</value>
+  </data>
+  <data name="EnableExtraction" xml:space="preserve">
+    <value>Enable extraction</value>
+  </data>
+  <data name="Rapid" xml:space="preserve">
+    <value>Rapid / compressed</value>
+  </data>
+  <data name="UseGPU" xml:space="preserve">
+    <value>Use GPU for conversion/extraction</value>
+  </data>
+  <data name="DelteByproducts" xml:space="preserve">
+    <value>Delete byproducts</value>
+  </data>
+  <data name="IncreaseBrightness" xml:space="preserve">
+    <value>Increase brightness (in %</value>
+  </data>
+  <data name="ResetDefaultBtn" xml:space="preserve">
+    <value>Reset to Default values</value>
+  </data>
+  <data name="Conversion" xml:space="preserve">
+    <value>Conversion</value>
+  </data>
+  <data name="Extraction" xml:space="preserve">
+    <value>Extraction</value>
+  </data>
+  <data name="Analysis" xml:space="preserve">
+    <value>Analysis</value>
+  </data>
+  <data name="EnableConversion" xml:space="preserve">
+    <value>Enable conversion</value>
+  </data>
+  <data name="ShowOutputLog" xml:space="preserve">
+    <value>Show log</value>
+  </data>
+  <data name="RestoredDefaultValues" xml:space="preserve">
+    <value>Default values restored</value>
+  </data>
+  <data name="SelectedFiles" xml:space="preserve">
+    <value>Selected files</value>
+  </data>
+  <data name="ErrorMustSelectAnalysisMethod" xml:space="preserve">
+    <value>Must select at least one analysis method</value>
+  </data>
+  <data name="SuccessAnalysedMovies" xml:space="preserve">
+    <value>Successfully analysed the following movie(s):</value>
+  </data>
+  <data name="Error" xml:space="preserve">
+    <value>Error</value>
+  </data>
+  <data name="DeletingTmpMovieFile" xml:space="preserve">
+    <value>Deleting converted, temporary movie file</value>
+  </data>
+  <data name="DeletingTmpMovieFrames" xml:space="preserve">
+    <value>Deleting temporary movie frames</value>
+  </data>
+  <data name="MultipleFilesSelected" xml:space="preserve">
+    <value>Multiple files</value>
+  </data>
+  <data name="FilterAllFiles" xml:space="preserve">
+    <value>All files</value>
+  </data>
+  <data name="FilterVideoFiles" xml:space="preserve">
+    <value>Video files</value>
+  </data>
+  <data name="DeletedFile" xml:space="preserve">
+    <value>Deleted file: {0}</value>
+  </data>
+  <data name="DeletedDirectory" xml:space="preserve">
+    <value>Deleted directory: {0}</value>
+  </data>
+  <data name="ProcessingFile" xml:space="preserve">
+    <value>Processing file: {0}</value>
+  </data>
+  <data name="ConversionStarted" xml:space="preserve">
+    <value>Conversion started</value>
+  </data>
+  <data name="ConversionFinished" xml:space="preserve">
+    <value>Conversion finished</value>
+  </data>
+  <data name="ExtractionStarted" xml:space="preserve">
+    <value>Extraction started</value>
+  </data>
+  <data name="ExtractionFinished" xml:space="preserve">
+    <value>Extraction finished</value>
+  </data>
+  <data name="AnalysisStarted" xml:space="preserve">
+    <value>Analysis started</value>
+  </data>
+  <data name="AnalysisFinished" xml:space="preserve">
+    <value>Analysis finished</value>
+  </data>
+  <data name="CreatingImages" xml:space="preserve">
+    <value>Creating images</value>
+  </data>
+  <data name="Cancel" xml:space="preserve">
+    <value>Cancel</value>
+  </data>
+  <data name="CancellationMessage" xml:space="preserve">
+    <value>The operation was cancelled</value>
+  </data>
+  <data name="EstRemaining" xml:space="preserve">
+    <value>Est. remaining: {0} min</value>
+  </data>
+  <data name="CropFound" xml:space="preserve">
+    <value>Crop found: {0}</value>
+  </data>
+  <data name="DetectingCrop" xml:space="preserve">
+    <value>Detecting crop</value>
+  </data>
+  <data name="Elapsed" xml:space="preserve">
+    <value>Elapsed</value>
+  </data>
+</root>
