@@ -1,9 +1,8 @@
-﻿using System;
+﻿using SixLabors.ImageSharp;
+using SixLabors.ImageSharp.PixelFormats;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.Drawing;
-using System.Drawing.Drawing2D;
-using System.Drawing.Imaging;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -24,23 +23,25 @@ namespace MovieColour
 			{
 				if (!IsUncompressedApproach && i % xframe != 0)
 					continue;
-				Bitmap bmp = new Bitmap(files[i]);
+				Image<Argb32> img = Image.Load<Argb32>(files[i]);
 				Color[] colours = new Color[3];
 				if (IsUncompressedApproach)
-					colours = GetColoursFromImage(bmp, BucketAmount);
+					colours = GetColoursFromImage(img, BucketAmount);
 				else
-					colours[0] = bmp.GetPixel(0, 0);
+					colours[0] = img[0, 0];
 
 				ColoursFromFiles.Add(colours);
 
 				if (i % splitcount == 0 && i != 0)
 				{
 					stopwatch.Stop();
-					Console.WriteLine("[" + DateTime.Now.ToString() + "] Thread{0}: Processed image: {1}/{2}", ThreadID, IsUncompressedApproach ? i : i / xframe, IsUncompressedApproach ? files.Length : files.Length / xframe);
-					ts = stopwatch.Elapsed;
+					int x = IsUncompressedApproach ? i : (i / xframe);
+					int y = IsUncompressedApproach ? files.Length : (files.Length / xframe);
+					string msg = string.Format("Processed image: {0}/{1}", x, y);
+					Logger.WriteLogMessage(msg, ThreadID);
 
-					Console.WriteLine("[" + DateTime.Now.ToString() + "] Thread{0}: Time elapsed analysing last {1} images: {2:00}:{3:00}:{4:00}.{5}",
-									ThreadID, splitcount, ts.Hours, ts.Minutes, ts.Seconds, ts.Milliseconds);
+					ts = stopwatch.Elapsed;
+					Logger.WriteElapsedTime(string.Format("analysing last {0} images", splitcount), ts, ThreadID);
 
 					GC.Collect();
 					stopwatch.Reset();
@@ -51,7 +52,7 @@ namespace MovieColour
 			return ColoursFromFiles;
 		}
 
-		internal Color[] GetColoursFromImage(Bitmap bmp, int BucketAmount)
+		internal Color[] GetColoursFromImage(Image<Argb32> img, int BucketAmount)
 		{
 			// 0: AvgClr
 			// 1: FrqClr
@@ -67,20 +68,20 @@ namespace MovieColour
 
 			// Bucket
 			List<Color> BucketColours = new List<Color>();
-			List<int>[] buckets = new List<int>[BucketAmount];
+			List<Color>[] buckets = new List<Color>[BucketAmount];
 			for (int i = 0; i < BucketAmount; i++)
-				buckets[i] = new List<int>();
+				buckets[i] = new List<Color>();
 
-			for (int x = 0; x < bmp.Width; x++)
+			for (int x = 0; x < img.Width; x++)
 			{
-				for (int y = 0; y < bmp.Height; y++)
+				for (int y = 0; y < img.Height; y++)
 				{
-					Color c = bmp.GetPixel(x, y);
+					Color c = img[x, y];
 
 					// Avg
-					r += c.R;
-					g += c.G;
-					b += c.B;
+					r += c.ToPixel<Argb32>().R;
+					g += c.ToPixel<Argb32>().G;
+					b += c.ToPixel<Argb32>().B;
 					total++;
 
 
@@ -99,7 +100,7 @@ namespace MovieColour
 			r /= total;
 			g /= total;
 			b /= total;
-			Color AverageColour = Color.FromArgb(r, g, b);
+			Color AverageColour = Color.FromRgb((byte)r, (byte)g, (byte)b);
 			ReturnColours[0] = AverageColour;
 
 
@@ -110,36 +111,31 @@ namespace MovieColour
 			// Bucket
 			for (int i = 0; i < BucketColours.Count(); i++)
 			{
-				int bucket = NormaliseToBucketIndex(BucketAmount, BucketColours[i].ToArgb());
-				buckets[bucket].Add(BucketColours[i].ToArgb());
+				int bucket = NormaliseToBucketIndex(BucketAmount, BucketColours[i]);
+				buckets[bucket].Add(BucketColours[i]);
 			}
-			List<int> fullestbucket = buckets.Aggregate((l, r) => l.Count > r.Count ? l : r);
+			List<Color> fullestbucket = buckets.Aggregate((l, r) => l.Count > r.Count ? l : r);
 			ReturnColours[2] = GetAvgColourFromBucket(fullestbucket);
 
 
 			return ReturnColours;
 		}
 
-		internal Color GetWeightedAverageColor(int BucketAmount, Bitmap bmp)
+		internal Color GetWeightedAverageColor(Image<Argb32> img, int BucketAmount)
 		{
-			List<int>[] buckets = new List<int>[BucketAmount];
+			List<Color>[] buckets = new List<Color>[BucketAmount];
 			for (int i = 0; i < BucketAmount; i++)
-				buckets[i] = new List<int>();
+				buckets[i] = new List<Color>();
 
 			List<Color> tmpcolours = new List<Color>();
-			for (int x = 0; x < bmp.Width; x++)
-				for (int y = 0; y < bmp.Height; y++)
-					tmpcolours.Add(bmp.GetPixel(x, y));
+			for (int x = 0; x < img.Width; x++)
+				for (int y = 0; y < img.Height; y++)
+					tmpcolours.Add(img[x, y]);
 
-			int[] colours = new int[bmp.Width * bmp.Height];
-
-			for (int i = 0; i < tmpcolours.Count(); i++)
-				colours[i] = tmpcolours[i].ToArgb();
-
-			for (int i = 0; i < colours.Length; i++)
+			for (int i = 0; i < tmpcolours.Count; i++)
 			{
-				int bucket = NormaliseToBucketIndex(BucketAmount, colours[i]);
-				buckets[bucket].Add(colours[i]);
+				int bucket = NormaliseToBucketIndex(BucketAmount, tmpcolours[i]);
+				buckets[bucket].Add(tmpcolours[i]);
 			}
 
 			var fullestbucket = buckets.Aggregate((l, r) => l.Count > r.Count ? l : r);
@@ -149,20 +145,20 @@ namespace MovieColour
 			return colour;
 		}
 
-		internal Color getMostFrequentColour(Bitmap bmp)
+		internal Color getMostFrequentColour(Image<Argb32> img)
 		{
 			Dictionary<Color, int> usedColours = new Dictionary<Color, int>();
 
-			for (int x = 0; x < bmp.Width; x++)
+			for (int x = 0; x < img.Width; x++)
 			{
-				for (int y = 0; y < bmp.Height; y++)
+				for (int y = 0; y < img.Height; y++)
 				{
-					Color c = bmp.GetPixel(x, y);
+					Argb32 pixel = img[x, y];
 
-					if (usedColours.ContainsKey(c))
-						usedColours[c] = usedColours[c]++;
+					if (usedColours.ContainsKey(pixel))
+						usedColours[pixel] = usedColours[pixel]++;
 					else
-						usedColours.Add(c, 1);
+						usedColours.Add(pixel, 1);
 				}
 			}
 			var max = usedColours.Aggregate((l, r) => l.Value > r.Value ? l : r).Key;
@@ -170,7 +166,7 @@ namespace MovieColour
 			return max;
 		}
 
-		internal Color GetAverageColor(Bitmap bmp)
+		internal Color GetAverageColor(Image<Argb32> img)
 		{
 			//Used for tally
 			int r = 0;
@@ -179,15 +175,15 @@ namespace MovieColour
 
 			int total = 0;
 
-			for (int x = 0; x < bmp.Width; x++)
+			for (int x = 0; x < img.Width; x++)
 			{
-				for (int y = 0; y < bmp.Height; y++)
+				for (int y = 0; y < img.Height; y++)
 				{
-					Color clr = bmp.GetPixel(x, y);
+					Argb32 pixel = img[x, y];
 
-					r += clr.R;
-					g += clr.G;
-					b += clr.B;
+					r += pixel.R;
+					g += pixel.G;
+					b += pixel.B;
 
 					total++;
 				}
@@ -198,22 +194,17 @@ namespace MovieColour
 			g /= total;
 			b /= total;
 
-			return Color.FromArgb(r, g, b);
+			return Color.FromRgb((byte)r, (byte)g, (byte)b);
 		}
 
-		internal Bitmap CreateBarcodeImageFromColours(List<Color> colors, int Width, int Height)
+		internal Image CreateBarcodeImageFromColours(List<Color> colors, int Width, int Height)
 		{
-			Bitmap FinalImage = new Bitmap(Width, Height);
+			var image = new Image<Argb32>(Width, Height);
+			for (int x = 0; x < image.Width; x++)
+				for (int y = 0; y < image.Height; y++)
+					image[x, y] = colors[x];
 
-			for (int i = 0; i < FinalImage.Width; i++)
-			{
-				for (int j = 0; j < FinalImage.Height; j++)
-				{
-					FinalImage.SetPixel(i, j, colors[i]);
-				}
-			}
-
-			return FinalImage;
+			return image;
 		}
 
 		internal async Task ExtractEveryXthFrame(string FilePath, int XthFrame, Func<string, string> OutputFileNameBuilder, VideoCodec VC, bool IsUncompressedApproach = true)
@@ -221,7 +212,7 @@ namespace MovieColour
 			IMediaInfo info = await FFmpeg.GetMediaInfo(FilePath).ConfigureAwait(false);
 			IVideoStream videoStream = info.VideoStreams.First()?.SetCodec(VideoCodec.png);
 
-			Console.WriteLine("[" + DateTime.Now.ToString() + "] Extracting every " + XthFrame + "-th frame");
+			Logger.WriteLogMessage("Extracting every " + XthFrame + "-th frame");
 
 			IConversion conversion = FFmpeg.Conversions.New()
 				.AddStream(videoStream);
@@ -243,40 +234,8 @@ namespace MovieColour
 
 			await conversion.Start();
 		}
-		
-		/// <summary>
-		 /// Resize the image to the specified width and height.
-		 /// </summary>
-		 /// <param name="image">The image to resize.</param>
-		 /// <param name="width">The width to resize to.</param>
-		 /// <param name="height">The height to resize to.</param>
-		 /// <returns>The resized image.</returns>
-		internal Bitmap ResizeImage(Bitmap image, int width, int height)
-		{
-			var destRect = new Rectangle(0, 0, width, height);
-			var destImage = new Bitmap(width, height);
 
-			destImage.SetResolution(image.HorizontalResolution, image.VerticalResolution);
-
-			using (var graphics = Graphics.FromImage(destImage))
-			{
-				graphics.CompositingMode = CompositingMode.SourceCopy;
-				graphics.CompositingQuality = CompositingQuality.HighQuality;
-				graphics.InterpolationMode = InterpolationMode.HighQualityBicubic;
-				graphics.SmoothingMode = SmoothingMode.HighQuality;
-				graphics.PixelOffsetMode = PixelOffsetMode.HighQuality;
-
-				using (var wrapMode = new ImageAttributes())
-				{
-					wrapMode.SetWrapMode(WrapMode.TileFlipXY);
-					graphics.DrawImage(image, destRect, 0, 0, image.Width, image.Height, GraphicsUnit.Pixel, wrapMode);
-				}
-			}
-
-			return destImage;
-		}
-
-		private Color GetAvgColourFromBucket(List<int> bucket)
+		private Color GetAvgColourFromBucket(List<Color> bucket)
 		{
 			//Used for tally
 			int r = 0;
@@ -285,22 +244,22 @@ namespace MovieColour
 
 			int total = 0;
 
-			r += Color.FromArgb(bucket[0]).R;
-			r += Color.FromArgb(bucket[bucket.Count - 1]).R;
-			g += Color.FromArgb(bucket[0]).G;
-			g += Color.FromArgb(bucket[bucket.Count - 1]).G;
-			b += Color.FromArgb(bucket[0]).B;
-			b += Color.FromArgb(bucket[bucket.Count - 1]).B;
+			r += bucket[0].ToPixel<Argb32>().R;
+			r += bucket[bucket.Count - 1].ToPixel<Argb32>().R;
+			g += bucket[0].ToPixel<Argb32>().G;
+			g += bucket[bucket.Count - 1].ToPixel<Argb32>().G;
+			b += bucket[0].ToPixel<Argb32>().B;
+			b += bucket[bucket.Count - 1].ToPixel<Argb32>().B;
 
 			total = 2;
 
 			//for (int x = 0; x < bucket.Count; x++)
 			//{
-			//	Color clr = Color.FromArgb(bucket[x]);
+			//	var pixel = bucket[x].ToPixel<Argb32>();
 
-			//	r += clr.R;
-			//	g += clr.G;
-			//	b += clr.B;
+			//	r += pixel.R;
+			//	g += pixel.G;
+			//	b += pixel.B;
 
 			//	total++;
 			//}
@@ -310,18 +269,24 @@ namespace MovieColour
 			g /= total;
 			b /= total;
 
-			return Color.FromArgb(r, g, b);
+			return Color.FromRgb((byte)r, (byte)g, (byte)b);
 		}
 
-		private int NormaliseToBucketIndex(int BucketAmount, int x)
+		private int NormaliseToBucketIndex(int BucketAmount, Color colour)
 		{
+			var pixel = colour.ToPixel<Argb32>();
+			byte[] bytes = { pixel.A, pixel.R, pixel.G, pixel.B };
+			if (BitConverter.IsLittleEndian)
+				Array.Reverse(bytes);
+			int argb = BitConverter.ToInt32(bytes);
+
 			int a = 0;
-			int b = BucketAmount-1;
+			int b = BucketAmount - 1;
 			int min = -16777216;
 			int max = -1;
-			long y = (long)(b - a) * (long)(x - min);
+			long y = (long)(b - a) * (long)(argb - min);
 			int ret = (int)(y / (max - min));
-			//Console.WriteLine(x + " -> " + ret);
+			//Console.WriteLine(argb + " -> " + ret);
 			return ret;
 		}
 	}

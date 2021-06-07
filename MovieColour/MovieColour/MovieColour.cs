@@ -1,8 +1,9 @@
-﻿using System;
+﻿using SixLabors.ImageSharp;
+using SixLabors.ImageSharp.PixelFormats;
+using SixLabors.ImageSharp.Processing;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.Drawing;
-using System.Drawing.Imaging;
 using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
@@ -14,15 +15,15 @@ namespace MovieColour
 {
 	internal class MovieColour
 	{
-		private static string BasePath = @"D:\movies\";
-		private static string MovieFile = @"DespicableMe3.mkv";
-		private static string OutputFolder = @"gru-ff-6";
+		private static string BasePath = @"C:\Users\Benschii\Desktop\asdf\";
+		private static string MovieFile = @"jellyfish.mkv";
+		private static string OutputFolder = @"jelly-ff-12";
 		private static string OutputFolderPath = Path.Combine(BasePath, OutputFolder);
-		private static VideoCodec VC = VideoCodec.hevc; // must be the same the MovieFile uses.
-		private static int X = 6;
-		private static bool EnableFrameExtraction = true;
+		private static VideoCodec VC = VideoCodec.h264; // must be the same the MovieFile uses.
+		private static int X = 12;
+		private static bool EnableFrameExtraction = false;
 		private static bool IsUncompressedApproach = true;
-		private static int ThreadCount = 12;
+		private static int ThreadCount = 4;
 		private static int BucketAmount = 3;
 		private static List<Color[]>[] MTColours = new List<Color[]>[ThreadCount];
 		private static Func<string, string> OutputFileNameBuilder = (number) =>
@@ -54,8 +55,7 @@ namespace MovieColour
 				stopwatch.Stop();
 				ts = stopwatch.Elapsed;
 				stopwatch.Reset();
-				Console.WriteLine("[" + DateTime.Now.ToString() + "] Time elapsed extracting every frame: {0:00}:{1:00}:{2:00}.{3}",
-								ts.Hours, ts.Minutes, ts.Seconds, ts.Milliseconds);
+				Logger.WriteElapsedTime("extracting every frame", ts);
 			}
 			var di = new DirectoryInfo(OutputFolderPath);
 			var files = di.GetFiles().OrderBy(n => Regex.Replace(n.Name, @"\d+", n => n.Value.PadLeft(6, '0'))).Select(f => f.FullName).ToArray();
@@ -89,13 +89,11 @@ namespace MovieColour
 			for (int i = 0; i < threads.Count; i++)
 				threads[i].Join();
 
-			//List<Color> colors = helper.GetColoursFromFiles(files, IsUncompressedApproach, splitcount);
 			stopwatch.Stop();
 			ts = stopwatch.Elapsed;
 			stopwatch.Reset();
 
-			Console.WriteLine("\n[" + DateTime.Now.ToString() + "] Time elapsed analysing all images: {0:00}:{1:00}:{2:00}.{3}\n",
-							ts.Hours, ts.Minutes, ts.Seconds, ts.Milliseconds);
+			Logger.WriteElapsedTime("analysing all images", ts);
 
 			stopwatch.Start();
 
@@ -120,13 +118,13 @@ namespace MovieColour
 				ColoursForBktImage.Add(c[2]);
 			}
 
-			Bitmap AvgImage = helper.CreateBarcodeImageFromColours(ColoursForAvgImage, ColoursForAvgImage.Count, 200);
-			Bitmap FrqImage = helper.CreateBarcodeImageFromColours(ColoursForFrqImage, ColoursForFrqImage.Count, 200);
-			Bitmap BktImage = helper.CreateBarcodeImageFromColours(ColoursForBktImage, ColoursForBktImage.Count, 200);
+			Image AvgImage = helper.CreateBarcodeImageFromColours(ColoursForAvgImage, ColoursForAvgImage.Count, 200);
+			Image FrqImage = helper.CreateBarcodeImageFromColours(ColoursForFrqImage, ColoursForFrqImage.Count, 200);
+			Image BktImage = helper.CreateBarcodeImageFromColours(ColoursForBktImage, ColoursForBktImage.Count, 200);
 
-			AvgImage = helper.ResizeImage(AvgImage, 1000, 200);
-			FrqImage = helper.ResizeImage(FrqImage, 1000, 200);
-			BktImage = helper.ResizeImage(BktImage, 1000, 200);
+			AvgImage.Mutate(x => x.Resize(1000, 200));
+			FrqImage.Mutate(x => x.Resize(1000, 200));
+			BktImage.Mutate(x => x.Resize(1000, 200));
 
 			string filename = BasePath + MovieFile.Substring(0, MovieFile.Length - 4) + "-" + X;
 			filename += "-" + (IsUncompressedApproach ? "ff" : "c");
@@ -135,17 +133,15 @@ namespace MovieColour
 			string FrqImageFilename = filename + "-FrqC.png";
 			string BktImageFilename = filename + "-" + BucketAmount + "-bucket.png";
 
-			AvgImage.Save(AvgImageFilename, ImageFormat.Png);
-			FrqImage.Save(FrqImageFilename, ImageFormat.Png);
-			BktImage.Save(BktImageFilename, ImageFormat.Png);
+			AvgImage.SaveAsPng(AvgImageFilename);
+			FrqImage.SaveAsPng(FrqImageFilename);
+			BktImage.SaveAsPng(BktImageFilename);
 
 			stopwatch.Stop();
 			ts = stopwatch.Elapsed;
 
-			Console.WriteLine("[" + DateTime.Now.ToString() + "] Time elapsed creating new image: {0:00}:{1:00}:{2:00}.{3}",
-							ts.Hours, ts.Minutes, ts.Seconds, ts.Milliseconds);
-
-			Console.WriteLine("Successfully finished.");
+			Logger.WriteElapsedTime("creating new image", ts);
+			Logger.WriteLogMessage("\nSuccessfully finished.");
 		}
 
 		internal static void ResCallback(int id, List<Color[]> colours)
