@@ -54,6 +54,18 @@ namespace MovieColour
 			return ColoursFromFiles;
 		}
 
+		internal Color[] GetColourFromSingleFile(string file, bool IsUncompressedApproach, int BucketAmount)
+		{
+			Image<Argb32> img = Image.Load<Argb32>(file);
+			Color[] colours = new Color[3];
+			if (IsUncompressedApproach)
+				colours = GetColoursFromImage(img, BucketAmount);
+			else
+				colours[0] = img[0, 0];
+
+			return colours;
+		}
+
 		internal Color[] GetColoursFromImage(Image<Argb32> img, int BucketAmount)
 		{
 			// 0: AvgClr

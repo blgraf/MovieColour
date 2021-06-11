@@ -17,7 +17,7 @@ namespace MovieColour
 	{
 		//private static string BasePath = @"C:\Users\Benschii\Desktop\asdf\";
 		private static string BasePath = @"D:\movies\";
-		private static string MovieFile = @"AIW.mkv";
+		private static string MovieFile = @"DespicableMe3.mkv";
 
 		private static int X = 1;
 		private static int ThreadCount = 16;
@@ -34,6 +34,7 @@ namespace MovieColour
 		private static string OutputFolder = MovieFile.Substring(0, MovieFile.Length-4) + (IsUncompressedApproach ? "-ff-" : "-c-") + X;
 		private static string OutputFolderPath = Path.Combine(BasePath, OutputFolder);
 		private static List<Color[]>[] MTColours = new List<Color[]>[ThreadCount];
+		private static List<Color[]> ParallelColours = new List<Color[]>();
 		private static TimeSpan TotalTimeSpan = new TimeSpan();
 		private static Func<string, string> OutputFileNameBuilder = (number) =>
 			{
@@ -99,31 +100,36 @@ namespace MovieColour
 
 			stopwatch.Start();
 
-			int split = (int)(files.Length / ThreadCount);
-
-			List<string[]> SplitFiles = new List<string[]>();
-			List<ThreadController> threadControllers = new List<ThreadController>();
-			List<Thread> threads = new List<Thread>();
-
-			for (int i = 0; i < ThreadCount; i++)
+			Parallel.For(0, files.Length, (i) =>
 			{
-				if (i != ThreadCount-1)
-					SplitFiles.Add(files.Skip(split * i).Take(split).ToArray());
-				else
-					SplitFiles.Add(files.Skip(split * i).ToArray());
-			}
+				ParallelColours.Insert(i, helper.GetColourFromSingleFile(files[i], IsUncompressedApproach, BucketAmount));
+			});
 
-			for (int i = 0; i < SplitFiles.Count; i++)
-				threadControllers.Add(new ThreadController(i, SplitFiles[i], IsUncompressedApproach, X, BucketAmount, new ExCallback(ResCallback)));
+			//int split = (int)(files.Length / ThreadCount);
 
-			for (int i = 0; i < threadControllers.Count; i++)
-				threads.Add(new Thread(new ThreadStart(threadControllers[i].Proc)));
+			//List<string[]> SplitFiles = new List<string[]>();
+			//List<ThreadController> threadControllers = new List<ThreadController>();
+			//List<Thread> threads = new List<Thread>();
 
-			for (int i = 0; i < threads.Count; i++)
-				threads[i].Start();
+			//for (int i = 0; i < ThreadCount; i++)
+			//{
+			//	if (i != ThreadCount-1)
+			//		SplitFiles.Add(files.Skip(split * i).Take(split).ToArray());
+			//	else
+			//		SplitFiles.Add(files.Skip(split * i).ToArray());
+			//}
 
-			for (int i = 0; i < threads.Count; i++)
-				threads[i].Join();
+			//for (int i = 0; i < SplitFiles.Count; i++)
+			//	threadControllers.Add(new ThreadController(i, SplitFiles[i], IsUncompressedApproach, X, BucketAmount, new ExCallback(ResCallback)));
+
+			//for (int i = 0; i < threadControllers.Count; i++)
+			//	threads.Add(new Thread(new ThreadStart(threadControllers[i].Proc)));
+
+			//for (int i = 0; i < threads.Count; i++)
+			//	threads[i].Start();
+
+			//for (int i = 0; i < threads.Count; i++)
+			//	threads[i].Join();
 
 			stopwatch.Stop();
 			ts = stopwatch.Elapsed;
@@ -134,21 +140,21 @@ namespace MovieColour
 
 			stopwatch.Start();
 
-			List<Color[]> colors = new List<Color[]>();
+			//List<Color[]> colors = new List<Color[]>();
 
-			foreach (List<Color[]> list in MTColours)
-			{
-				foreach (Color[] c in list)
-				{
-					colors.Add(c);
-				}
-			}
+			//foreach (List<Color[]> list in MTColours)
+			//{
+			//	foreach (Color[] c in list)
+			//	{
+			//		colors.Add(c);
+			//	}
+			//}
 
 			List<Color> ColoursForAvgImage = new List<Color>();
 			List<Color> ColoursForFrqImage = new List<Color>();
 			List<Color> ColoursForBktImage = new List<Color>();
 
-			foreach (Color[] c in colors)
+			foreach (Color[] c in ParallelColours)
 			{
 				ColoursForAvgImage.Add(c[0]);
 				ColoursForFrqImage.Add(c[1]);
