@@ -17,20 +17,22 @@ namespace MovieColour
 	{
 		//private static string BasePath = @"C:\Users\Benschii\Desktop\asdf\";
 		private static string BasePath = @"D:\movies\";
-		private static string MovieFile = @"Coco.mkv";
-		private static string IntermediateFile = "tmp.mkv";
-		private static string IntermediateFilePath = Path.Combine(BasePath, IntermediateFile);
-		private static string MovieFilePath = Path.Combine(BasePath, MovieFile);
-		private static string OutputFolder = "Coco-ff-1";
-		private static string OutputFolderPath = Path.Combine(BasePath, OutputFolder);
+		private static string MovieFile = @"AIW.mkv";
+
 		private static int X = 1;
+		private static int ThreadCount = 16;
+		private static int BucketAmount = 3;
 		private static bool EnableConversion = true;
 		private static bool EnableFrameExtraction = true;
 		private static bool IsUncompressedApproach = true;
 		private static bool DeleteByProducts = true;
 		private static string WorkingScale = "720:-2";
-		private static int ThreadCount = 16;
-		private static int BucketAmount = 3;
+
+		private static string IntermediateFile = "tmp.mkv";
+		private static string IntermediateFilePath = Path.Combine(BasePath, IntermediateFile);
+		private static string MovieFilePath = Path.Combine(BasePath, MovieFile);
+		private static string OutputFolder = MovieFile.Substring(0, MovieFile.Length-4) + (IsUncompressedApproach ? "-ff-" : "-c-") + X;
+		private static string OutputFolderPath = Path.Combine(BasePath, OutputFolder);
 		private static List<Color[]>[] MTColours = new List<Color[]>[ThreadCount];
 		private static TimeSpan TotalTimeSpan = new TimeSpan();
 		private static Func<string, string> OutputFileNameBuilder = (number) =>
@@ -187,7 +189,7 @@ namespace MovieColour
 			{
 				Logger.WriteLogMessage("Deleting temporary files");
 				File.Delete(IntermediateFilePath);
-				File.Delete(OutputFolderPath);
+				Directory.Delete(OutputFolderPath, true);
 			}
 
 			Logger.WriteLogMessage("\nSuccessfully finished.");
