@@ -17,21 +17,22 @@ namespace MovieColour
 	{
 		//private static string BasePath = @"C:\Users\Benschii\Desktop\asdf\";
 		private static string BasePath = @"D:\movies\";
-		private static string MovieFile = @"Howl.mkv";
+		private static string MovieFile = @"Coco.mkv";
 		private static string IntermediateFile = "tmp.mkv";
 		private static string IntermediateFilePath = Path.Combine(BasePath, IntermediateFile);
 		private static string MovieFilePath = Path.Combine(BasePath, MovieFile);
-		private static string OutputFolder = "Holw-ff-1";
+		private static string OutputFolder = "Coco-ff-1";
 		private static string OutputFolderPath = Path.Combine(BasePath, OutputFolder);
 		private static int X = 1;
 		private static bool EnableConversion = true;
 		private static bool EnableFrameExtraction = true;
 		private static bool IsUncompressedApproach = true;
-		private static bool DeleteByProducts = false;
+		private static bool DeleteByProducts = true;
 		private static string WorkingScale = "720:-2";
 		private static int ThreadCount = 16;
 		private static int BucketAmount = 3;
 		private static List<Color[]>[] MTColours = new List<Color[]>[ThreadCount];
+		private static TimeSpan TotalTimeSpan = new TimeSpan();
 		private static Func<string, string> OutputFileNameBuilder = (number) =>
 			{
 				string ret = OutputFolderPath + "\\";
@@ -44,6 +45,7 @@ namespace MovieColour
 
 		internal static async Task Main(string[] args)
 		{
+			Logger.WriteLogMessage("Creating barcode image from: " + MovieFile);
 			ImageHelper helper = new ImageHelper();
 			Stopwatch stopwatch = new Stopwatch();
 			TimeSpan ts = new TimeSpan();
@@ -65,6 +67,7 @@ namespace MovieColour
 						await helper.ConvertToScale(MovieFilePath, WorkingScale, IntermediateFilePath);
 						stopwatch.Stop();
 						ts = stopwatch.Elapsed;
+						TotalTimeSpan.Add(ts);
 						stopwatch.Reset();
 						stopwatch.Start();
 						Logger.WriteElapsedTime("converting movie to " + WorkingScale, ts);
@@ -85,6 +88,7 @@ namespace MovieColour
 
 				stopwatch.Stop();
 				ts = stopwatch.Elapsed;
+				TotalTimeSpan.Add(ts);
 				stopwatch.Reset();
 				Logger.WriteElapsedTime("extracting every frame", ts);
 			}
@@ -121,6 +125,7 @@ namespace MovieColour
 
 			stopwatch.Stop();
 			ts = stopwatch.Elapsed;
+			TotalTimeSpan.Add(ts);
 			stopwatch.Reset();
 
 			Logger.WriteElapsedTime("analysing all images", ts);
@@ -167,22 +172,26 @@ namespace MovieColour
 			FrqImage.SaveAsPng(FrqImageFilename);
 			BktImage.SaveAsPng(BktImageFilename);
 
-			stopwatch.Stop();
-			ts = stopwatch.Elapsed;
-
-			Logger.WriteElapsedTime("creating new image", ts);
-			Logger.WriteLogMessage("\nSuccessfully finished.");
-
 			Image FullSizeTest = helper.CreateBarcodeImageFromColours(ColoursForBktImage, ColoursForBktImage.Count, 1);
 			FullSizeTest.SaveAsPng(filename + "-FULLSIZED.png");
 			FullSizeTest.Mutate(x => x.Resize(8192, 2048));
 			FullSizeTest.SaveAsPng(filename + "-Wallpaper.png");
 
+			stopwatch.Stop();
+			ts = stopwatch.Elapsed;
+			TotalTimeSpan.Add(ts);
+
+			Logger.WriteElapsedTime("creating new image", ts);
+
 			if (DeleteByProducts)
 			{
+				Logger.WriteLogMessage("Deleting temporary files");
 				File.Delete(IntermediateFilePath);
 				File.Delete(OutputFolderPath);
 			}
+
+			Logger.WriteLogMessage("\nSuccessfully finished.");
+			Logger.WriteElapsedTime("doing all tasks", TotalTimeSpan);
 		}
 
 		internal static void ResCallback(int id, List<Color[]> colours)

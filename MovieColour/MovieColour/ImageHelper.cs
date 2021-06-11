@@ -70,10 +70,10 @@ namespace MovieColour
 
 			// Bucket
 			List<Color> BucketColours = new List<Color>();
-			//List<Color>[,,] buckets = new List<Color>[BucketAmount, BucketAmount, BucketAmount];
-			List<Color>[] buckets = new List<Color>[BucketAmount];
-			for (int i = 0; i < buckets.Length; i++)
-				buckets[i] = new List<Color>();
+			List<Color>[,,] buckets = new List<Color>[BucketAmount, BucketAmount, BucketAmount];
+			//List<Color>[] buckets = new List<Color>[BucketAmount];
+			//for (int i = 0; i < buckets.Length; i++)
+			//	buckets[i] = new List<Color>();
 
 			for (int x = 0; x < img.Width; x++)
 			{
@@ -112,26 +112,26 @@ namespace MovieColour
 			ReturnColours[1] = MostFrequentColor;
 
 			// Bucket
-			for (int i = 0; i < BucketColours.Count(); i++)
-			{
-				int bucket = NormaliseToBucketIndex(BucketAmount, BucketColours[i]);
-				buckets[bucket].Add(BucketColours[i]);
-			}
-			//foreach (Color c in BucketColours)
+			//for (int i = 0; i < BucketColours.Count(); i++)
 			//{
-			//	var pxl = c.ToPixel<Argb32>();
-			//	var red = (int)Math.Floor(pxl.R * BucketAmount / Math.Pow(2, 8));
-			//	var grn = (int)Math.Floor(pxl.G * BucketAmount / Math.Pow(2, 8));
-			//	var blu = (int)Math.Floor(pxl.B * BucketAmount / Math.Pow(2, 8));
-
-			//	if (buckets[red, grn, blu] == null)
-			//		buckets[red, grn, blu] = new List<Color>();
-			//	buckets[red, grn, blu].Add(c);
-
+			//	int bucket = NormaliseToBucketIndex(BucketAmount, BucketColours[i]);
+			//	buckets[bucket].Add(BucketColours[i]);
 			//}
-			//List<Color> fullestbucket = FindFullestBucket(buckets);
+			foreach (Color c in BucketColours)
+			{
+				var pxl = c.ToPixel<Argb32>();
+				var red = (int)Math.Floor(pxl.R * BucketAmount / Math.Pow(2, 8));
+				var grn = (int)Math.Floor(pxl.G * BucketAmount / Math.Pow(2, 8));
+				var blu = (int)Math.Floor(pxl.B * BucketAmount / Math.Pow(2, 8));
 
-			List<Color> fullestbucket = buckets.Aggregate((l, r) => l.Count > r.Count ? l : r);
+				if (buckets[red, grn, blu] == null)
+					buckets[red, grn, blu] = new List<Color>();
+				buckets[red, grn, blu].Add(c);
+
+			}
+			List<Color> fullestbucket = FindFullestBucket(buckets);
+
+			//List<Color> fullestbucket = buckets.Aggregate((l, r) => l.Count > r.Count ? l : r);
 			ReturnColours[2] = GetColourFromBucket(fullestbucket, MyEnums.BucketColorSelectionMode.AvgMinMax);
 
 
