@@ -15,15 +15,21 @@ namespace MovieColour
 {
 	internal class MovieColour
 	{
-		private static string BasePath = @"C:\Users\Benschii\Desktop\asdf\";
-		private static string MovieFile = @"jellyfish.mkv";
-		private static string OutputFolder = @"jelly-ff-12";
+		//private static string BasePath = @"C:\Users\Benschii\Desktop\asdf\";
+		private static string BasePath = @"D:\movies\";
+		private static string MovieFile = @"Howl.mkv";
+		private static string IntermediateFile = "tmp.mkv";
+		private static string IntermediateFilePath = Path.Combine(BasePath, IntermediateFile);
+		private static string MovieFilePath = Path.Combine(BasePath, MovieFile);
+		private static string OutputFolder = "Holw-ff-1";
 		private static string OutputFolderPath = Path.Combine(BasePath, OutputFolder);
-		private static VideoCodec VC = VideoCodec.h264; // must be the same the MovieFile uses.
-		private static int X = 12;
-		private static bool EnableFrameExtraction = false;
+		private static int X = 1;
+		private static bool EnableConversion = true;
+		private static bool EnableFrameExtraction = true;
 		private static bool IsUncompressedApproach = true;
-		private static int ThreadCount = 4;
+		private static bool DeleteByProducts = false;
+		private static string WorkingScale = "720:-2";
+		private static int ThreadCount = 16;
 		private static int BucketAmount = 3;
 		private static List<Color[]>[] MTColours = new List<Color[]>[ThreadCount];
 		private static Func<string, string> OutputFileNameBuilder = (number) =>
@@ -51,15 +57,39 @@ namespace MovieColour
 			if (EnableFrameExtraction)
 			{
 				stopwatch.Start();
-				await helper.ExtractEveryXthFrame(Path.Combine(BasePath, MovieFile), X, OutputFileNameBuilder, VC, IsUncompressedApproach);
+
+				if (IsUncompressedApproach)
+				{
+					if (EnableConversion)
+					{
+						await helper.ConvertToScale(MovieFilePath, WorkingScale, IntermediateFilePath);
+						stopwatch.Stop();
+						ts = stopwatch.Elapsed;
+						stopwatch.Reset();
+						stopwatch.Start();
+						Logger.WriteElapsedTime("converting movie to " + WorkingScale, ts);
+						await helper.ExtractEveryXthFrame(IntermediateFilePath, X, OutputFileNameBuilder) ;
+					}
+					else
+					{
+						if (File.Exists(IntermediateFilePath))
+							await helper.ExtractEveryXthFrame(IntermediateFilePath, X, OutputFileNameBuilder);
+						else
+							await helper.ExtractEveryXthFrame(MovieFilePath, X, OutputFileNameBuilder);
+					}
+				}
+				else
+				{
+					await helper.ExtractEveryXthFrame(MovieFilePath, X, OutputFileNameBuilder, IsUncompressedApproach);
+				}
+
 				stopwatch.Stop();
 				ts = stopwatch.Elapsed;
 				stopwatch.Reset();
 				Logger.WriteElapsedTime("extracting every frame", ts);
 			}
-			var di = new DirectoryInfo(OutputFolderPath);
-			var files = di.GetFiles().OrderBy(n => Regex.Replace(n.Name, @"\d+", n => n.Value.PadLeft(6, '0'))).Select(f => f.FullName).ToArray();
-			int splitcount = X < 6 ? 2500 : 50;
+			var DI = new DirectoryInfo(OutputFolderPath);
+			var files = DI.GetFiles().OrderBy(n => Regex.Replace(n.Name, @"\d+", n => n.Value.PadLeft(6, '0'))).Select(f => f.FullName).ToArray();
 
 			stopwatch.Start();
 
@@ -142,6 +172,17 @@ namespace MovieColour
 
 			Logger.WriteElapsedTime("creating new image", ts);
 			Logger.WriteLogMessage("\nSuccessfully finished.");
+
+			Image FullSizeTest = helper.CreateBarcodeImageFromColours(ColoursForBktImage, ColoursForBktImage.Count, 1);
+			FullSizeTest.SaveAsPng(filename + "-FULLSIZED.png");
+			FullSizeTest.Mutate(x => x.Resize(8192, 2048));
+			FullSizeTest.SaveAsPng(filename + "-Wallpaper.png");
+
+			if (DeleteByProducts)
+			{
+				File.Delete(IntermediateFilePath);
+				File.Delete(OutputFolderPath);
+			}
 		}
 
 		internal static void ResCallback(int id, List<Color[]> colours)

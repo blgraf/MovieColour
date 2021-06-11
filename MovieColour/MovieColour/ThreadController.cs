@@ -34,7 +34,10 @@ namespace MovieColour
 		{
 			List<Color[]> c = helper.GetColoursFromFiles(files, IsUncompressed, (int)Math.Ceiling((double)files.Count() / 15), X, BucketAmount, id);
 			if (callback != null)
+			{
+				Logger.WriteLogMessage("Finished analysing images.", id);
 				callback(id, c);
+			}
 		}
 
 	}

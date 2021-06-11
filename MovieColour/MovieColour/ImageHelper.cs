@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Xabe.FFmpeg;
 
@@ -37,7 +38,8 @@ namespace MovieColour
 					stopwatch.Stop();
 					int x = IsUncompressedApproach ? i : (i / xframe);
 					int y = IsUncompressedApproach ? files.Length : (files.Length / xframe);
-					string msg = string.Format("Processed image: {0}/{1}", x, y);
+					float p = ((float)x / (float)y) * 100;
+					string msg = string.Format("Processed image: {0}/{1} [{2:00}%]", x, y, p);
 					Logger.WriteLogMessage(msg, ThreadID);
 
 					ts = stopwatch.Elapsed;
@@ -68,8 +70,9 @@ namespace MovieColour
 
 			// Bucket
 			List<Color> BucketColours = new List<Color>();
+			//List<Color>[,,] buckets = new List<Color>[BucketAmount, BucketAmount, BucketAmount];
 			List<Color>[] buckets = new List<Color>[BucketAmount];
-			for (int i = 0; i < BucketAmount; i++)
+			for (int i = 0; i < buckets.Length; i++)
 				buckets[i] = new List<Color>();
 
 			for (int x = 0; x < img.Width; x++)
@@ -114,8 +117,22 @@ namespace MovieColour
 				int bucket = NormaliseToBucketIndex(BucketAmount, BucketColours[i]);
 				buckets[bucket].Add(BucketColours[i]);
 			}
+			//foreach (Color c in BucketColours)
+			//{
+			//	var pxl = c.ToPixel<Argb32>();
+			//	var red = (int)Math.Floor(pxl.R * BucketAmount / Math.Pow(2, 8));
+			//	var grn = (int)Math.Floor(pxl.G * BucketAmount / Math.Pow(2, 8));
+			//	var blu = (int)Math.Floor(pxl.B * BucketAmount / Math.Pow(2, 8));
+
+			//	if (buckets[red, grn, blu] == null)
+			//		buckets[red, grn, blu] = new List<Color>();
+			//	buckets[red, grn, blu].Add(c);
+
+			//}
+			//List<Color> fullestbucket = FindFullestBucket(buckets);
+
 			List<Color> fullestbucket = buckets.Aggregate((l, r) => l.Count > r.Count ? l : r);
-			ReturnColours[2] = GetAvgColourFromBucket(fullestbucket);
+			ReturnColours[2] = GetColourFromBucket(fullestbucket, MyEnums.BucketColorSelectionMode.AvgMinMax);
 
 
 			return ReturnColours;
@@ -140,7 +157,7 @@ namespace MovieColour
 
 			var fullestbucket = buckets.Aggregate((l, r) => l.Count > r.Count ? l : r);
 
-			Color colour = GetAvgColourFromBucket(fullestbucket);
+			Color colour = GetColourFromBucket(fullestbucket, MyEnums.BucketColorSelectionMode.AvgTotal);
 
 			return colour;
 		}
@@ -207,35 +224,123 @@ namespace MovieColour
 			return image;
 		}
 
-		internal async Task ExtractEveryXthFrame(string FilePath, int XthFrame, Func<string, string> OutputFileNameBuilder, VideoCodec VC, bool IsUncompressedApproach = true)
+		internal async Task ConvertToScale(string FilePath, string Scale, string OutputPath)
 		{
-			IMediaInfo info = await FFmpeg.GetMediaInfo(FilePath).ConfigureAwait(false);
-			IVideoStream videoStream = info.VideoStreams.First()?.SetCodec(VideoCodec.png);
+			Logger.WriteLogMessage("Checking if cropping is necessary...");
 
-			Logger.WriteLogMessage("Extracting every " + XthFrame + "-th frame");
+			IMediaInfo info = await FFmpeg.GetMediaInfo(FilePath).ConfigureAwait(false);
+			IVideoStream videoStream = info.VideoStreams.First();
+
+			string crop = await GetCropFromStreamAsync(videoStream);
+			int progress = -1;
 
 			IConversion conversion = FFmpeg.Conversions.New()
-				.AddStream(videoStream);
-
-			if (!IsUncompressedApproach)
-			{
-				conversion.AddParameter("-vf scale=1:1")
-				.AddParameter("-sws_flags sinc");
-			}
-
-			conversion.UseHardwareAcceleration(HardwareAccelerator.d3d11va, VC, VideoCodec.png)
-				.ExtractEveryNthFrame(XthFrame, OutputFileNameBuilder);
+				.AddStream(videoStream)
+				.AddParameter("-vf " + crop + "scale=" + Scale)
+				.AddParameter("-sws_flags sinc")
+				.SetOutput(OutputPath);
 
 			conversion.OnProgress += (sender, args) =>
 			{
 				var percent = (int)(Math.Round(args.Duration.TotalSeconds / args.TotalLength.TotalSeconds, 2) * 100);
-				Console.WriteLine($"[{args.Duration} / {args.TotalLength}] {percent}%");
+				if (percent > progress)
+				{
+					Logger.WriteLogMessage($"[{args.Duration} / {args.TotalLength}] {percent}%");
+					progress = percent;
+				}
+			};
+
+			Logger.WriteLogMessage("Cropping the video if necessary and converting to " + Scale);
+
+			await conversion.Start();
+		}
+
+		internal async Task ExtractEveryXthFrame(string FilePath, int XthFrame, Func<string, string> OutputFileNameBuilder, bool IsUncompressed = true)
+		{
+			IMediaInfo info = await FFmpeg.GetMediaInfo(FilePath).ConfigureAwait(false);
+			IVideoStream videoStream = info.VideoStreams.First();
+			VideoCodec VC = GetVideoCodecFromString(videoStream.Codec);
+			int progress = -1;
+
+			IConversion conversion = FFmpeg.Conversions.New()
+				.AddStream(videoStream);
+				//.UseHardwareAcceleration(HardwareAccelerator.d3d11va, VC, VideoCodec.png);
+
+			if (!IsUncompressed)
+				conversion.AddParameter("-vf scale=1:1").AddParameter("-sws-flags sinc");
+
+			conversion.ExtractEveryNthFrame(XthFrame, OutputFileNameBuilder);
+
+			Logger.WriteLogMessage("Extracting every " + XthFrame + "-th frame");
+
+			conversion.OnProgress += (sender, args) =>
+			{
+				var percent = (int)(Math.Round(args.Duration.TotalSeconds / args.TotalLength.TotalSeconds, 2) * 100);
+				if (percent > progress)
+				{
+					Logger.WriteLogMessage($"[{args.Duration} / {args.TotalLength}] {percent}%");
+					progress = percent;
+				}
 			};
 
 			await conversion.Start();
 		}
 
-		private Color GetAvgColourFromBucket(List<Color> bucket)
+		private Color GetColourFromBucket(List<Color> bucket, MyEnums.BucketColorSelectionMode colorSelectionMode)
+		{
+			switch (colorSelectionMode)
+			{
+				case MyEnums.BucketColorSelectionMode.AvgMinMax:
+					return GetAvgMinMaxFromBucket(bucket);
+				case MyEnums.BucketColorSelectionMode.AvgTotal:
+					return getAvgColourFromBucket(bucket);
+				case MyEnums.BucketColorSelectionMode.Median:
+					return getMedianColourFromBucket(bucket);
+				default:
+					Logger.WriteLogMessage("Encountered an error trying to get colour from bucket!");
+					return Color.Black;
+			}
+
+		}
+
+		private Color getMedianColourFromBucket(List<Color> bucket)
+		{
+
+
+
+
+			return Color.Black;
+		}
+
+		private Color getAvgColourFromBucket(List<Color> bucket)
+		{
+			//Used for tally
+			int r = 0;
+			int g = 0;
+			int b = 0;
+
+			int total = 0;
+
+			for (int x = 0; x < bucket.Count; x++)
+			{
+				var pixel = bucket[x].ToPixel<Argb32>();
+
+				r += pixel.R;
+				g += pixel.G;
+				b += pixel.B;
+
+				total++;
+			}
+
+			//Calculate average
+			r /= total;
+			g /= total;
+			b /= total;
+
+			return Color.FromRgb((byte)r, (byte)g, (byte)b);
+		}
+
+		private Color GetAvgMinMaxFromBucket(List<Color> bucket)
 		{
 			//Used for tally
 			int r = 0;
@@ -253,18 +358,6 @@ namespace MovieColour
 
 			total = 2;
 
-			//for (int x = 0; x < bucket.Count; x++)
-			//{
-			//	var pixel = bucket[x].ToPixel<Argb32>();
-
-			//	r += pixel.R;
-			//	g += pixel.G;
-			//	b += pixel.B;
-
-			//	total++;
-			//}
-
-			//Calculate average
 			r /= total;
 			g /= total;
 			b /= total;
@@ -288,6 +381,75 @@ namespace MovieColour
 			int ret = (int)(y / (max - min));
 			//Console.WriteLine(argb + " -> " + ret);
 			return ret;
+		}
+
+		private List<Color> FindFullestBucket(List<Color>[,,] buckets)
+		{
+			List<Color> fullest = new List<Color>();
+			int max = 0;
+
+			foreach (List<Color> bucket in buckets)
+			{
+				if (bucket != null && bucket.Count > max)
+				{
+					fullest = bucket;
+					max = bucket.Count;
+				}
+			}
+
+			if (fullest.Count == 0)
+				fullest = buckets[0, 0, 0];
+
+			return fullest;
+		}
+
+		private async Task<string> GetCropFromStreamAsync(IVideoStream videoStream)
+		{
+			VideoCodec VC = GetVideoCodecFromString(videoStream.Codec);
+			string crop = "";
+
+			IConversion CropDetectConversion = FFmpeg.Conversions.New()
+				.AddStream(videoStream)
+				.AddParameter("-ss 90")
+				.AddParameter("-vframes 10")
+				.AddParameter("-vf cropdetect")
+				.AddParameter("-f null -");
+
+			string ffmpegoutput = "";
+
+			CropDetectConversion.OnDataReceived += (sender, args) =>
+			{
+				ffmpegoutput += "\n" + args.Data;
+			};
+
+			await CropDetectConversion.Start();
+
+			var matches = Regex.Matches(ffmpegoutput, @"crop=\d{1,4}:\d[0-9]{1,4}:\d:\d[0-9]{0,4}");
+
+			if (matches != null)
+			{
+				if (matches.Count > 1)
+					crop = matches[matches.Count - 1].Value;
+				else
+					crop = matches[0].Value;
+				Logger.WriteLogMessage("Crop found: " + crop);
+				crop += ",";
+			}
+
+			return crop;
+		}
+
+		private VideoCodec GetVideoCodecFromString(string codec)
+		{
+			switch (codec)
+			{
+				case "h264":
+					return VideoCodec.h264;
+				case "hevc":
+					return VideoCodec.hevc;
+				default:
+					return VideoCodec.h264;
+			}
 		}
 	}
 }
