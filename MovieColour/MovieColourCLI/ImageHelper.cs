@@ -9,7 +9,7 @@ using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Xabe.FFmpeg;
 
-namespace MovieColour
+namespace MovieColourCLI
 {
 	internal class ImageHelper
 	{
@@ -279,7 +279,7 @@ namespace MovieColour
 				//.UseHardwareAcceleration(HardwareAccelerator.d3d11va, VC, VideoCodec.png);
 
 			if (!IsUncompressed)
-				conversion.AddParameter("-vf scale=1:1").AddParameter("-sws-flags sinc");
+				conversion.AddParameter("-vf scale=1:1").AddParameter("-sws_flags sinc");
 
 			conversion.ExtractEveryNthFrame(XthFrame, OutputFileNameBuilder);
 

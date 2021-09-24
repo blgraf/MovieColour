@@ -1,0 +1,37 @@
+WIP
+- Basic GUI
+
+ToDo
+- Compare 1080p, 720p, 480p and 360p in time vs space vs accuracy
+
+- Add watermark (choose which corner)
+-- Movie name (year)
+-- blgraf (OR Benschii)
+--- In a perfect world make that customisable in the GUI
+
+- Batch/queue analysis
+
+- More analysis methods (like the Median)
+-- Median
+-- Difference between animation and life action
+--- animation tends to be more colourful, more contrasty
+--- maybe brighten up life action colours by a certain percentage to make it look nicer
+
+- Add option to create the image for X analysis (e.g. *only* bucket, or *only* average, or bucket *and* most frequent)
+
+- Add resize feature directly to the GUI
+
+Dreams
+- Detect backgrounds and weigh those less
+
+
+
+
+Shared in WA Status
+- HP1
+- Coco
+- Despicable Me 3
+- Chihiro
+- Howl
+- Avengers - Infinity War
+- Frozen

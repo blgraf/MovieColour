@@ -1,0 +1,171 @@
+﻿<mah:MetroWindow x:Class="MovieColour.MainWindow"
+                 xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                 xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                 xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+                 xmlns:iconPacks="http://metro.mahapps.com/winfx/xaml/iconpacks"
+                 xmlns:mah="clr-namespace:MahApps.Metro.Controls;assembly=MahApps.Metro"
+                 xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+                 xmlns:local="clr-namespace:MovieColour"
+                 Title="MovieColour"
+                 Width="800"
+                 Height="350"
+                 Background="WhiteSmoke"
+                 WindowStartupLocation="CenterScreen"
+                 Icon="Resources/MovieIcon.ico"
+                 mc:Ignorable="d">
+
+    <mah:MetroWindow.RightWindowCommands>
+        <mah:WindowCommands>
+            <Button Click="BtnLaunchGitHubSite_OnClick" ToolTip="Open up the GitHub site">
+                <iconPacks:PackIconModern Width="22"
+                                  Height="22"
+                                  Kind="SocialGithubOctocat" />
+            </Button>
+        </mah:WindowCommands>
+    </mah:MetroWindow.RightWindowCommands>
+
+    <mah:MetroWindow.Resources>
+        <Style x:Key="HorizontalStackPanel" TargetType="{x:Type StackPanel}">
+            <Style.Resources>
+                <Style TargetType="TextBox" BasedOn="{StaticResource {x:Type TextBox}}">
+                    <Setter Property="VerticalAlignment"  Value="Center" />
+                </Style>
+                <Style TargetType="Button" BasedOn="{StaticResource {x:Type Button}}">
+                    <Setter Property="VerticalAlignment"  Value="Center" />
+                </Style>
+                <Style TargetType="Label" BasedOn="{StaticResource {x:Type Label}}">
+                    <Setter Property="VerticalAlignment"  Value="Center" />
+                </Style>
+            </Style.Resources>
+        </Style>
+    </mah:MetroWindow.Resources>
+
+
+
+    <Grid>
+        <TabControl>
+            <TabItem Header="MovieColour">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="1.75*" />
+                        <RowDefinition Height="1*" />
+                    </Grid.RowDefinitions>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="1*" />
+                        <ColumnDefinition Width="1*" />
+                        <ColumnDefinition Width="1*" />
+                    </Grid.ColumnDefinitions>
+
+                    <StackPanel Grid.Row="0" Grid.Column="0" Orientation="Vertical"  >
+                        <Label x:Name="LblGeneral" />
+
+                        <StackPanel Orientation="Horizontal" Style="{StaticResource HorizontalStackPanel}">
+                            <Label x:Name="LblInputFile" Content="{x:Static local:Strings.InputFile}" />
+                            <TextBox x:Name="TxtBxInputFile" Width="100" />
+                            <Button x:Name="BtnChooseInputFile" Click="BtnChooseInputFile_OnClick" Content="{x:Static local:Strings.ChooseFile}" />
+                        </StackPanel>
+
+                        <StackPanel Orientation="Horizontal" Style="{StaticResource HorizontalStackPanel}">
+                            <Label x:Name="LblXthFrame" Content="{x:Static local:Strings.AnalyseXthFrame}" />
+                            <TextBox x:Name="TxtBxFrameCount" Text="1" Width="25" />
+                        </StackPanel>
+
+                        <StackPanel Orientation="Horizontal" Style="{StaticResource HorizontalStackPanel}">
+                            <Label x:Name="LblWorkingScale" Content="{x:Static local:Strings.WorkingScale}" />
+                            <TextBox x:Name="TxtBxWorkingScale" Text="720:-2" Width="60" />
+                        </StackPanel>
+
+                        <StackPanel Orientation="Horizontal" Style="{StaticResource HorizontalStackPanel}">
+                            <Label x:Name="LblOutputResolution" Content="{x:Static local:Strings.OutputResolution}" />
+                            <TextBox x:Name="TxtBxOutputResolutionX" Text="5120" Width="40" />
+                            <Label x:Name="LblResolutionX" Content="x" />
+                            <TextBox x:Name="TxtBxOutputResolutionY" Text="1440" Width="40" />
+                        </StackPanel>
+
+                        <StackPanel Orientation="Horizontal" Style="{StaticResource HorizontalStackPanel}">
+                            <Button x:Name="BtnStart" Click="BtnStart_OnClick" Content="{x:Static local:Strings.Start}" />
+                        </StackPanel>
+                    </StackPanel>
+
+                    <StackPanel Grid.Row="0" Grid.Column="1" Orientation="Vertical" >
+                        <Label x:Name="LblAnalysisSelection" Content="{x:Static local:Strings.AnalysisSelection}" />
+                        <Label x:Name="LblCreateImages" Content="{x:Static local:Strings.CreateImagesUsingMethods}" />
+
+                        <StackPanel Orientation="Vertical" Style="{StaticResource HorizontalStackPanel}">
+                            <CheckBox x:Name="ChkBoxBuckets" Content="{x:Static local:Strings.Buckets}" />
+                            <CheckBox x:Name="ChkBoxBucketsTotal" Margin="20, 0" Content="{x:Static local:Strings.BucketsAvgTotal}" />
+                            <CheckBox x:Name="ChkBoxBucketsMinMax" Margin="20, 0" Content="{x:Static local:Strings.BucketsAvgMinMax}" />
+                            <CheckBox x:Name="ChkBoxBucketsMedian" Margin="20, 0" Content="{x:Static local:Strings.BucketsMedian}" />
+                            <CheckBox x:Name="ChkBoxAvg" Content="{x:Static local:Strings.AvgFrame}" />
+                            <CheckBox x:Name="ChkBoxMostFrequent" Content="{x:Static local:Strings.MostFrequent}" />
+                            <CheckBox x:Name="ChkBoxMedian" Content="{x:Static local:Strings.MedianFrame}" />
+                        </StackPanel>
+                    </StackPanel>
+
+                    <StackPanel Grid.Row="0" Grid.Column="2" Orientation="Vertical">
+                        <Label x:Name="LblAdvancedOptions" Content="{x:Static local:Strings.AdvancedOptions}" />
+
+                        <StackPanel Orientation="Horizontal" Style="{StaticResource HorizontalStackPanel}">
+                            <Label x:Name="LblBucketcount" Content="{x:Static local:Strings.BucketCount}" />
+                            <TextBox x:Name="TxtBxBucketcount" Text="1" Width="25" />
+                        </StackPanel>
+
+                        <CheckBox x:Name="ChkBoxEnableConversion" Content="{x:Static local:Strings.EnableConversion}" />
+                        <CheckBox x:Name="ChkBoxEnableExtraction" Content="{x:Static local:Strings.EnableExtraction}" />
+                        <CheckBox x:Name="ChkBoxRapid" Content="{x:Static local:Strings.Rapid}" Click="ChkBoxRapid_OnClick" />
+                        <CheckBox x:Name="ChkBoxGPU" Content="{x:Static local:Strings.UseGPU}" />
+                        <CheckBox x:Name="ChkBoxDeleteByProducts" Content="{x:Static local:Strings.DelteByproducts}" />
+
+                        <StackPanel Orientation="Horizontal" Style="{StaticResource HorizontalStackPanel}">
+                            <Label x:Name="LblIncreaseBrightness" Content="{x:Static local:Strings.IncreaseBrightness}" />
+                            <TextBox x:Name="TxtBxIncreaseBrightness" Text="1" Width="25" />
+                        </StackPanel>
+
+                        <StackPanel Orientation="Horizontal" Style="{StaticResource HorizontalStackPanel}">
+                            <Button x:Name="BtnResetToDefault" Click="BrnResetToDefault_OnClick" Content="{x:Static local:Strings.ResetDefault}" />
+                        </StackPanel>
+
+                    </StackPanel>
+
+
+
+                    <StackPanel Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="3" >
+                        <!-- Progress Bars -->
+
+                        <Grid>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="1*" />
+                                <RowDefinition Height="1*" />
+                                <RowDefinition Height="1*" />
+                            </Grid.RowDefinitions>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="1*" />
+                                <ColumnDefinition Width="5*" />
+                                <ColumnDefinition Width="1*" />
+                            </Grid.ColumnDefinitions>
+
+                            <Label Grid.Row="0" Grid.Column="0" x:Name="LblProgressConversion" Content="{x:Static local:Strings.Conversion}" />
+                            <Label Grid.Row="1" Grid.Column="0" x:Name="LblProgressExtraction" Content="{x:Static local:Strings.Extraction}" />
+                            <Label Grid.Row="2" Grid.Column="0" x:Name="LblProgressAnalysis" Content="{x:Static local:Strings.Analysis}" />
+
+                            <ProgressBar Grid.Row="0" Grid.Column="1" x:Name="ProgressBarConversion" Minimum="0" Maximum="100" Margin="4" />
+                            <ProgressBar Grid.Row="1" Grid.Column="1" x:Name="ProgressBarExtraction" Minimum="0" Maximum="100" Margin="4" />
+                            <ProgressBar Grid.Row="2" Grid.Column="1" x:Name="ProgressBarAnalysis" Minimum="0" Maximum="100" Margin="4" />
+
+                            <Label Grid.Row="0" Grid.Column="3" x:Name="LblProgressConversionTime" />
+                            <Label Grid.Row="1" Grid.Column="3" x:Name="LblProgressExtractionTime" />
+                            <Label Grid.Row="2" Grid.Column="3" x:Name="LblProgressAnalysisTime" />
+                            
+                        </Grid>
+                        
+                    </StackPanel>
+
+                </Grid>
+            </TabItem>
+
+
+            <TabItem Header="Image Resizer">
+            </TabItem>
+        </TabControl>
+    </Grid>
+</mah:MetroWindow>

@@ -1,4 +1,4 @@
-﻿using SixLabors.ImageSharp;
+using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.PixelFormats;
 using SixLabors.ImageSharp.Processing;
 using System;
@@ -11,13 +11,13 @@ using System.Threading;
 using System.Threading.Tasks;
 using Xabe.FFmpeg;
 
-namespace MovieColour
+namespace MovieColourCLI
 {
-	internal class MovieColour
+	internal class MovieColourCLI
 	{
 		//private static string BasePath = @"C:\Users\Benschii\Desktop\asdf\";
-		private static string BasePath = @"D:\movies\";
-		private static string MovieFile = @"DespicableMe3.mkv";
+		private static string BasePath = @"D:\";
+		private static string MovieFile = @"Frozen.mp4";
 
 		private static int X = 1;
 		private static int ThreadCount = 16;
@@ -31,11 +31,11 @@ namespace MovieColour
 		private static string IntermediateFile = "tmp.mkv";
 		private static string IntermediateFilePath = Path.Combine(BasePath, IntermediateFile);
 		private static string MovieFilePath = Path.Combine(BasePath, MovieFile);
-		private static string OutputFolder = MovieFile.Substring(0, MovieFile.Length-4) + (IsUncompressedApproach ? "-ff-" : "-c-") + X;
+		private static string OutputFolder = MovieFile[0..^4] + (IsUncompressedApproach ? "-ff-" : "-c-") + X;
 		private static string OutputFolderPath = Path.Combine(BasePath, OutputFolder);
 		private static List<Color[]>[] MTColours = new List<Color[]>[ThreadCount];
-		private static List<Color[]> ParallelColours = new List<Color[]>();
-		private static TimeSpan TotalTimeSpan = new TimeSpan();
+		private static Color[][] ParallelColours;
+		private static long TotalTimeSpanTicks;
 		private static Func<string, string> OutputFileNameBuilder = (number) =>
 			{
 				string ret = OutputFolderPath + "\\";
@@ -70,7 +70,7 @@ namespace MovieColour
 						await helper.ConvertToScale(MovieFilePath, WorkingScale, IntermediateFilePath);
 						stopwatch.Stop();
 						ts = stopwatch.Elapsed;
-						TotalTimeSpan.Add(ts);
+						TotalTimeSpanTicks += ts.Ticks;
 						stopwatch.Reset();
 						stopwatch.Start();
 						Logger.WriteElapsedTime("converting movie to " + WorkingScale, ts);
@@ -91,18 +91,29 @@ namespace MovieColour
 
 				stopwatch.Stop();
 				ts = stopwatch.Elapsed;
-				TotalTimeSpan.Add(ts);
+				TotalTimeSpanTicks += ts.Ticks;
 				stopwatch.Reset();
 				Logger.WriteElapsedTime("extracting every frame", ts);
 			}
 			var DI = new DirectoryInfo(OutputFolderPath);
 			var files = DI.GetFiles().OrderBy(n => Regex.Replace(n.Name, @"\d+", n => n.Value.PadLeft(6, '0'))).Select(f => f.FullName).ToArray();
+			ParallelColours = new Color[files.Length][];
 
 			stopwatch.Start();
+			
+			IProgress<int> progress = new Progress<int>(percent =>
+			{
+				Logger.WriteLogMessage("Frame analysis: " + percent + "%");
+			});
 
+			var totalCount = files.Length;
+			var tmpCount = 0;
 			Parallel.For(0, files.Length, (i) =>
 			{
-				ParallelColours.Insert(i, helper.GetColourFromSingleFile(files[i], IsUncompressedApproach, BucketAmount));
+				ParallelColours[i] = helper.GetColourFromSingleFile(files[i], IsUncompressedApproach, BucketAmount);
+
+				tmpCount++;
+				progress.Report(tmpCount * 100 / totalCount);
 			});
 
 			//int split = (int)(files.Length / ThreadCount);
@@ -133,7 +144,7 @@ namespace MovieColour
 
 			stopwatch.Stop();
 			ts = stopwatch.Elapsed;
-			TotalTimeSpan.Add(ts);
+			TotalTimeSpanTicks += ts.Ticks;
 			stopwatch.Reset();
 
 			Logger.WriteElapsedTime("analysing all images", ts);
@@ -187,7 +198,7 @@ namespace MovieColour
 
 			stopwatch.Stop();
 			ts = stopwatch.Elapsed;
-			TotalTimeSpan.Add(ts);
+			TotalTimeSpanTicks += ts.Ticks;
 
 			Logger.WriteElapsedTime("creating new image", ts);
 
@@ -198,8 +209,9 @@ namespace MovieColour
 				Directory.Delete(OutputFolderPath, true);
 			}
 
-			Logger.WriteLogMessage("\nSuccessfully finished.");
-			Logger.WriteElapsedTime("doing all tasks", TotalTimeSpan);
+			Logger.WriteLogMessage("");
+			Logger.WriteLogMessage("Successfully finished.");
+			Logger.WriteElapsedTime("doing all tasks", new TimeSpan(TotalTimeSpanTicks));
 		}
 
 		internal static void ResCallback(int id, List<Color[]> colours)
