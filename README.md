@@ -5,8 +5,7 @@ A program to create movie barcodes from your favourite movies and use them as wa
 With the help of [FFmpeg](https://ffmpeg.org/) to extract frames, the program analyses each frame of the desired video file and determines the most relevant colour of that frame based on different methods, e.g. the most frequent colour. And then creates a wallpaper-sized image from it.
 
 ## Installation
-Clone the repo and execute the `publish.bat` file. This will create a self-contained .exe file in `release/`.  
-One day there will be a release page.
+Download the [latest release](https://github.com/blgraf/MovieColour/releases/latest) and run the `exe` file.  
 ### Requirements
 - .NET 6
 - Windows 10+
