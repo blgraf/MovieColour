@@ -325,7 +325,7 @@ namespace MovieColour.Helper
 
 			int total = 0;
 
-			bucket.Sort(new SortColourHSL());
+			//bucket.Sort();
 
 			r += bucket[0].ToPixel<Argb32>().R;
 			r += bucket[bucket.Count - 1].ToPixel<Argb32>().R;
