@@ -1,10 +1,8 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio Version 16
-VisualStudioVersion = 16.0.31321.278
+# Visual Studio Version 17
+VisualStudioVersion = 17.13.35828.75 d17.13
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MovieColourCLI", "MovieColourCLI\MovieColourCLI.csproj", "{DFF191B9-5900-4CAB-AA0A-DFB74CF26D9C}"
-EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MovieColour", "MovieColour\MovieColour.csproj", "{29F83EB3-DD61-464E-A1D0-F78AB8A31C86}"
 EndProject
 Global
@@ -15,13 +13,6 @@ Global
 		Release|x64 = Release|x64
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-		{DFF191B9-5900-4CAB-AA0A-DFB74CF26D9C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{DFF191B9-5900-4CAB-AA0A-DFB74CF26D9C}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{DFF191B9-5900-4CAB-AA0A-DFB74CF26D9C}.Debug|x64.ActiveCfg = Debug|Any CPU
-		{DFF191B9-5900-4CAB-AA0A-DFB74CF26D9C}.Debug|x64.Build.0 = Debug|Any CPU
-		{DFF191B9-5900-4CAB-AA0A-DFB74CF26D9C}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{DFF191B9-5900-4CAB-AA0A-DFB74CF26D9C}.Release|Any CPU.Build.0 = Release|Any CPU
-		{DFF191B9-5900-4CAB-AA0A-DFB74CF26D9C}.Release|x64.ActiveCfg = Release|Any CPU
 		{29F83EB3-DD61-464E-A1D0-F78AB8A31C86}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{29F83EB3-DD61-464E-A1D0-F78AB8A31C86}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{29F83EB3-DD61-464E-A1D0-F78AB8A31C86}.Debug|x64.ActiveCfg = Debug|x64
