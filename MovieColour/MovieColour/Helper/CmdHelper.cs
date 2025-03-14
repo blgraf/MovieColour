@@ -125,15 +125,16 @@ namespace MovieColour.Helper
 
         /// <summary>
         /// Get the command to convert a video file to a specified scale
-        /// Crop and Scale are specified as strings and expected in the format "width:height" (e.g. "1920:1072" and "-2:360")
+        /// Crop is specified as string and expected in the format "width:height" (e.g. "1920:1072")
+        /// Scale is specified as int and expected in the format "height" (e.g. 360 (p))
         /// </summary>
         /// <param name="fullFilePath"></param>
         /// <param name="crop">Expected format: "width:height", e.g. "1920:1072"</param>
-        /// <param name="scale">Expected format: "width:height", e.g. "-2:360"</param>
+        /// <param name="scale">Expected format: "height", e.g. 360</param>
         /// <param name="outputFilePath"></param>
         /// <returns></returns>
-        internal static string GetConvertCommand(string fullFilePath, string crop, string scale, string outputFilePath) => 
-            $"ffmpeg -hide_banner -i {fullFilePath} -map 0:v:0 -vf crop={crop},scale={scale} -sws_flags sinc {outputFilePath}";
+        internal static string GetConvertCommand(string fullFilePath, string crop, int scale, string outputFilePath) => 
+            $"ffmpeg -hide_banner -i {fullFilePath} -map 0:v:0 -vf crop={crop},scale=-2:{scale} -sws_flags sinc {outputFilePath}";
 
         /// <summary>
         /// Get the command to get the frame rate of a video file

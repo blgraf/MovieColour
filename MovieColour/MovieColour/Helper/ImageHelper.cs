@@ -3,7 +3,6 @@ using SixLabors.ImageSharp.PixelFormats;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text.RegularExpressions;
 using static MovieColour.Helper.Enums;
 
 namespace MovieColour.Helper
@@ -16,10 +15,10 @@ namespace MovieColour.Helper
         /// Converts a video file to the given scale using FFmpeg
         /// </summary>
         /// <param name="filePath"></param>
-        /// <param name="scale"></param>
+        /// <param name="scale">The full int of the height of the frame, e.g. 360 for 360p</param>
         /// <param name="outputPath"></param>
         /// <param name="useGPU">ToDo: #30 - Add support to use the GPU for video conversion</param>
-        internal void ConvertToScale(string filePath, string scale, string outputPath, bool useGPU)
+        internal void ConvertToScale(string filePath, int scale, string outputPath, bool useGPU)
 		{
 			string crop = GetCropFromFile(filePath);
 

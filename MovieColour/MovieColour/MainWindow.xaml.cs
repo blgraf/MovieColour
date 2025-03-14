@@ -265,7 +265,7 @@ namespace MovieColour
 
             this.TxtBxInputFile.IsReadOnly = true;
             this.TxtBxFrameCount.Text = "1";
-            this.TxtBxWorkingScale.Text = "-2:360";
+            this.TxtBxWorkingScale.Text = "360";
             this.TxtBxOutputResolutionX.Text = "5120";
             this.TxtBxOutputResolutionY.Text = "1440";
 
@@ -320,7 +320,10 @@ namespace MovieColour
 
             watch.Start();
 
-            movieColourHelper.ConvertMovieAsync(TxtBxWorkingScale.Text, tmpfile, (bool)ChkBoxGPU.IsChecked);
+            if (!int.TryParse(TxtBxWorkingScale.Text, out int scale))
+                throw new Exception("non-int scale");
+
+            movieColourHelper.ConvertMovieAsync(scale, tmpfile, (bool)ChkBoxGPU.IsChecked);
 
             watch.Stop();
 

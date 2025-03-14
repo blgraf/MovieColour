@@ -1,12 +1,11 @@
-﻿using MovieColour.Helper;
-using SixLabors.ImageSharp;
+﻿using SixLabors.ImageSharp;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using static MovieColour.Helper.Enums;
 
-namespace MovieColour
+namespace MovieColour.Helper
 {
     internal class MovieColourHelper
 	{
@@ -22,7 +21,7 @@ namespace MovieColour
 		/// <param name="tmpPath"></param>
 		/// <param name="useGPU"></param>
 		/// <returns></returns>
-		internal void ConvertMovieAsync (string workingScale, string tmpPath, bool useGPU)
+		internal void ConvertMovieAsync (int workingScale, string tmpPath, bool useGPU)
 		{
 			imageHelper.ConvertToScale(InputFile, workingScale, tmpPath, useGPU);
 		}
