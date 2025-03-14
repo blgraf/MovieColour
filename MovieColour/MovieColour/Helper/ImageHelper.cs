@@ -4,69 +4,28 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text.RegularExpressions;
-using System.Threading.Tasks;
-using Xabe.FFmpeg;
 using static MovieColour.Helper.Enums;
 
 namespace MovieColour.Helper
 {
-    class ImageHelper
+    internal class ImageHelper
 	{
-
         #region Internal methods
 
-        // Deprecated - ToDo no Xabe.FFmpeg
-        internal async Task ConvertToScale(string FilePath, string Scale, string OutputPath, bool useGPU, IProgress<int> progress)
+        /// <summary>
+        /// Converts a video file to the given scale using FFmpeg
+        /// </summary>
+        /// <param name="filePath"></param>
+        /// <param name="scale"></param>
+        /// <param name="outputPath"></param>
+        /// <param name="useGPU">ToDo: #30 - Add support to use the GPU for video conversion</param>
+        internal void ConvertToScale(string filePath, string scale, string outputPath, bool useGPU)
 		{
-			IMediaInfo info = await FFmpeg.GetMediaInfo(FilePath).ConfigureAwait(false);
-			IVideoStream videoStream = info.VideoStreams.First();
-			VideoCodec VC = GetVideoCodecFromString(videoStream.Codec);
+			string crop = GetCropFromFile(filePath);
 
-			string crop = await GetCropFromStreamAsync(videoStream);
+			var command = CmdHelper.GetConvertCommand(filePath, crop, scale, outputPath);
 
-			IConversion conversion = FFmpeg.Conversions.New()
-				.AddStream(videoStream)
-				.AddParameter("-vf " + crop + "scale=" + Scale)
-				.AddParameter("-sws_flags sinc")
-				.SetOutput(OutputPath);
-
-			if (useGPU)
-				conversion.UseHardwareAcceleration(HardwareAccelerator.auto, VC, VC);
-
-			conversion.OnProgress += (sender, args) =>
-			{
-				var percent = (int)Math.Ceiling(args.Duration.TotalSeconds * 100 / args.TotalLength.TotalSeconds);
-				progress.Report(percent);
-			};
-
-			await conversion.Start();
-		}
-
-        // Deprecated - ToDo no Xabe.FFmpeg
-        internal async Task ExtractEveryXthFrame(string FilePath, int XthFrame, Func<string, string> OutputFileNameBuilder, bool useGPU, IProgress<int> progress, bool IsUncompressed = true)
-		{
-			IMediaInfo info = await FFmpeg.GetMediaInfo(FilePath).ConfigureAwait(false);
-			IVideoStream videoStream = info.VideoStreams.First();
-			VideoCodec VC = GetVideoCodecFromString(videoStream.Codec);
-
-			IConversion conversion = FFmpeg.Conversions.New()
-				.AddStream(videoStream);
-
-			if (useGPU)
-				conversion.UseHardwareAcceleration(HardwareAccelerator.d3d11va, VC, VideoCodec.png);
-
-			if (!IsUncompressed)
-				conversion.AddParameter("-vf scale=1:1").AddParameter("-sws-flags sinc");
-
-			conversion.ExtractEveryNthFrame(XthFrame, OutputFileNameBuilder);
-
-			conversion.OnProgress += (sender, args) =>
-			{
-				var percent = (int)Math.Ceiling(args.Duration.TotalSeconds * 100 / args.TotalLength.TotalSeconds);
-				progress.Report(percent);
-			};
-
-			await conversion.Start();
+			_ = CmdHelper.RunCommandAndGetStdoutAsString(command);
 		}
 
 		/// <summary>
@@ -192,14 +151,12 @@ namespace MovieColour.Helper
         /// <returns>The frame rate as a double</returns>
         internal static double GetFps(string fullFilePath)
         {
-            // ffprobe {file} -v 0 -select_streams v:0 -print_format flat -show_entries stream=avg_frame_rate
-            var cmd = $"ffprobe {fullFilePath} -v 0 -select_streams v:0 -print_format flat -show_entries stream=avg_frame_rate";
-            var output = CmdHelper.RunCommandAndGetStdoutAsString(cmd);
+            var output = CmdHelper.RunCommandAndGetStdoutAsString(CmdHelper.GetGetFpsCommand(fullFilePath));
 
             // This returns something like:
 			// stream.0.avg_frame_rate="24000/1001"
             // From this we need a RegEx, that extracts the numbers and divides them
-            var match = Regex.Match(output, @"\d+/\d+");
+            var match = RegexHelper.FramerateRegex().Match(output);
             var numbers = match.Value.Split('/');
             return double.Parse(numbers[0]) / double.Parse(numbers[1]);
         }
@@ -211,7 +168,7 @@ namespace MovieColour.Helper
 		/// <returns></returns>
 		internal static byte[] GetSingleFrameAsByteArray(string fullFilePath)
 		{
-            return CmdHelper.RunCommandAndGetStdoutAsByteArray($"ffmpeg -hide_banner -i {fullFilePath} -frames:v 1 -c:v bmp -f image2pipe -");
+            return CmdHelper.RunCommandAndGetStdoutAsByteArray(CmdHelper.GetSingleFrameCommand(fullFilePath));
         }
 
         /// <summary>
@@ -224,7 +181,7 @@ namespace MovieColour.Helper
         /// <returns></returns>
         internal static byte[][] GetXFrames(string fullFilePath, double offsetInSeconds, int x, int chunkSize)
 		{
-			var stdout = CmdHelper.RunCommandAndGetStdoutAsByteArray($"ffmpeg -hide_banner -ss {offsetInSeconds}s -i {fullFilePath} -frames:v {x} -c:v bmp -f image2pipe -");
+			var stdout = CmdHelper.RunCommandAndGetStdoutAsByteArray(CmdHelper.GetXFramesCommand(fullFilePath, offsetInSeconds, x));
 			return CmdHelper.SplitStdoutByChunk(stdout, chunkSize);
         }
 
@@ -232,36 +189,26 @@ namespace MovieColour.Helper
 
         #region Private methods
 
-        // Deprecated - ToDo no Xabe.FFmpeg
-        private async Task<string> GetCropFromStreamAsync(IVideoStream videoStream)
+		/// <summary>
+		/// Get the crop from the file using FFmpeg
+		/// </summary>
+		/// <param name="fullFilePath"></param>
+		/// <returns></returns>
+        private string GetCropFromFile(string fullFilePath)
 		{
 			MainWindow.logger.Information(Strings.DetectingCrop);
 
-			VideoCodec VC = GetVideoCodecFromString(videoStream.Codec);
-			string crop = "";
+			var crop = String.Empty;
 
-			IConversion CropDetectConversion = FFmpeg.Conversions.New()
-				.AddStream(videoStream)
-				.AddParameter("-ss 90")
-				.AddParameter("-vframes 10")
-				.AddParameter("-vf cropdetect")
-				.AddParameter("-f null -");
+			var command = CmdHelper.GetCropCommand(fullFilePath);
+			var result = CmdHelper.RunCommandAndGetStdoutAsString(command);
 
-			string ffmpegoutput = "";
-
-			CropDetectConversion.OnDataReceived += (sender, args) =>
-			{
-				ffmpegoutput += "\n" + args.Data;
-			};
-
-			await CropDetectConversion.Start();
-
-			var matches = Regex.Matches(ffmpegoutput, @"crop=\d{1,4}:\d{1,4}:\d{1,4}:\d{1,4}");
+            var matches = RegexHelper.CropRegex().Matches(result);
 
 			if (matches != null)
 			{
 				if (matches.Count > 1)
-					crop = matches[matches.Count - 1].Value;
+					crop = matches[^1].Value;
 				else
 					crop = matches[0].Value;
 				crop += ",";
@@ -270,20 +217,6 @@ namespace MovieColour.Helper
 			MainWindow.logger.Information(String.Format(Strings.CropFound, crop));
 
 			return crop;
-		}
-
-        // Deprecated - ToDo no Xabe.FFmpeg
-        private VideoCodec GetVideoCodecFromString(string codec)
-		{
-			switch (codec)
-			{
-				case "h264":
-					return VideoCodec.h264;
-				case "hevc":
-					return VideoCodec.hevc;
-				default:
-					return VideoCodec.h264;
-			}
 		}
 
 		/// <summary>

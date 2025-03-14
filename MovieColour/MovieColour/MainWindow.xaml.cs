@@ -138,7 +138,7 @@ namespace MovieColour
             try
             {
                 if (methods.Count == 0)
-                    throw new Exception(Strings.ErrorMustSelectAnalysisMethod); // ToDo
+                    throw new Exception(Strings.ErrorMustSelectAnalysisMethod); // ToDo #12
 
                 var enableConversion = (bool)ChkBoxEnableConversion.IsChecked;
 
@@ -239,6 +239,11 @@ namespace MovieColour
                         MessageBox.Show(Application.Current.MainWindow, ex.Message, Strings.Error, MessageBoxButton.OK, MessageBoxImage.Error);
                     }
                 }
+                else
+                {
+                    logger.Error("{Exeption}", ex.Message);
+                    MessageBox.Show(Application.Current.MainWindow, ex.Message, Strings.Error, MessageBoxButton.OK, MessageBoxImage.Error);
+                }
             }
             this.BtnStart.IsEnabled = true;
         }
@@ -260,7 +265,7 @@ namespace MovieColour
 
             this.TxtBxInputFile.IsReadOnly = true;
             this.TxtBxFrameCount.Text = "1";
-            this.TxtBxWorkingScale.Text = "360:-2";
+            this.TxtBxWorkingScale.Text = "-2:360";
             this.TxtBxOutputResolutionX.Text = "5120";
             this.TxtBxOutputResolutionY.Text = "1440";
 
@@ -315,7 +320,7 @@ namespace MovieColour
 
             watch.Start();
 
-            await movieColourHelper.ConvertMovieAsync(TxtBxWorkingScale.Text, tmpfile, (bool)ChkBoxGPU.IsChecked);
+            movieColourHelper.ConvertMovieAsync(TxtBxWorkingScale.Text, tmpfile, (bool)ChkBoxGPU.IsChecked);
 
             watch.Stop();
 

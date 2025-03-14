@@ -22,9 +22,9 @@ namespace MovieColour
 		/// <param name="tmpPath"></param>
 		/// <param name="useGPU"></param>
 		/// <returns></returns>
-		internal async Task ConvertMovieAsync (string workingScale, string tmpPath, bool useGPU)
+		internal void ConvertMovieAsync (string workingScale, string tmpPath, bool useGPU)
 		{
-			await imageHelper.ConvertToScale(InputFile, workingScale, tmpPath, useGPU, Progress);
+			imageHelper.ConvertToScale(InputFile, workingScale, tmpPath, useGPU);
 		}
 
 		/// <summary>
