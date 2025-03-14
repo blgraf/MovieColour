@@ -19,7 +19,7 @@ Soon(TM), there will be proper instructions with screenshots.
 - Select if the source file should be converted to a smaller scale first and if so set the size (format: `desiredResolution`, e.g. `480`)
 - Start the process. A converted movie file and the resulting pictures will be stored in the same directory as the movie file
 
-*anything below 1080p drastically increases the processing time.  
+*anything below 1080p drastically decreases the processing time.  
 From my testing, on a Ryzen 9 3900X, analysing one batch of frames takes between 20 and 40 seconds on average.  
 And on 4k one batch is about 80 frames, and on 1080p 360 frames.  
 This means that a 2h movie on 24fps takes about four hours on 1080p, and 18 hours on 4k. (Very rough estimation)
