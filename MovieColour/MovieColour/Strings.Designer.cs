@@ -412,6 +412,15 @@ namespace MovieColour {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Image Resizer.
+        /// </summary>
+        public static string ImageResizer {
+            get {
+                return ResourceManager.GetString("ImageResizer", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Increase brightness (in %.
         /// </summary>
         public static string IncreaseBrightness {
@@ -444,6 +453,15 @@ namespace MovieColour {
         public static string MostFrequent {
             get {
                 return ResourceManager.GetString("MostFrequent", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Movie Colour.
+        /// </summary>
+        public static string MovieColour {
+            get {
+                return ResourceManager.GetString("MovieColour", resourceCulture);
             }
         }
         
@@ -498,6 +516,15 @@ namespace MovieColour {
         public static string RestoredDefaultValues {
             get {
                 return ResourceManager.GetString("RestoredDefaultValues", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Save output log to file.
+        /// </summary>
+        public static string SaveOutputLog {
+            get {
+                return ResourceManager.GetString("SaveOutputLog", resourceCulture);
             }
         }
         

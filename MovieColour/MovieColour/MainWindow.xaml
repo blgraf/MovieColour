@@ -6,7 +6,7 @@
                  xmlns:mah="clr-namespace:MahApps.Metro.Controls;assembly=MahApps.Metro"
                  xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
                  xmlns:local="clr-namespace:MovieColour"
-                 Title="MovieColour"
+                 Title="{x:Static local:Strings.MovieColour}"
                  Width="800"
                  Height="330"
                  Background="WhiteSmoke"
@@ -45,7 +45,7 @@
 
     <Grid>
         <TabControl>
-            <TabItem Header="MovieColour">
+            <TabItem Header="{x:Static local:Strings.MovieColour}">
                 <StackPanel>
                     <Grid>
                         <Grid.RowDefinitions>
@@ -165,6 +165,7 @@
                     </Grid>
 
                     <StackPanel x:Name="StackPanelLog" Visibility="Collapsed" >
+                        <CheckBox x:Name="CkBxSaveOutputLog" Content="{x:Static local:Strings.SaveOutputLog}" Click="ChkBoxSaveLogToFile_OnClick" />
                         <RichTextBox x:Name="RchTxtBxLog" 
                                      Height="300" Background="Black" Foreground="LightGray" 
                                      FontFamily="Cascadia Mono, Consolas, Courier New, monospace" 
@@ -175,7 +176,7 @@
             </TabItem>
 
 
-            <TabItem Header="Image Resizer">
+            <TabItem Header="{x:Static local:Strings.ImageResizer}">
             </TabItem>
         </TabControl>
     </Grid>

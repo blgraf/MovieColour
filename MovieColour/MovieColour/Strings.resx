@@ -282,4 +282,13 @@
   <data name="Elapsed" xml:space="preserve">
     <value>Elapsed</value>
   </data>
+  <data name="MovieColour" xml:space="preserve">
+    <value>Movie Colour</value>
+  </data>
+  <data name="SaveOutputLog" xml:space="preserve">
+    <value>Save output log to file</value>
+  </data>
+  <data name="ImageResizer" xml:space="preserve">
+    <value>Image Resizer</value>
+  </data>
 </root>

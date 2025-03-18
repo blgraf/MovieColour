@@ -83,7 +83,7 @@ namespace MovieColour
         {
             logger = new LoggerConfiguration()
                 //.WriteTo.Console()
-                .WriteTo.File(@"C:\Users\Benschii\Documents\Git\MovieColour\log\log.txt",
+                .WriteTo.File(@".\log.txt",
                     outputTemplate: "{Timestamp:[yyyy-MM-dd HH:mm:ss]} [{Level:u3}] | {Message:lj}{NewLine}{Exception}",
                     encoding: System.Text.Encoding.UTF8)
                 .WriteTo.RichTextBox(RchTxtBxLog)

@@ -16,10 +16,13 @@ namespace MovieColour.Helper
         /// <returns></returns>
         internal static byte[] RunCommandAndGetStdoutAsByteArray(string fileName, string command)
         {
-            byte[] output = null;
             var startInfo = GetCustomFileProcessStartInfo(fileName, command);
 
-            using var process = new Process { StartInfo = startInfo, EnableRaisingEvents = true };
+            using var process = new Process 
+            { 
+                StartInfo = startInfo, 
+                EnableRaisingEvents = true 
+            };
             var stdErrBuilder = new StringBuilder();
 
             process.ErrorDataReceived += (sender, e) =>
@@ -33,10 +36,6 @@ namespace MovieColour.Helper
             process.Start();
 
             process.BeginErrorReadLine();
-
-
-
-
 
             using var ms = new MemoryStream();
             var outputStream = process.StandardOutput.BaseStream as FileStream;
@@ -157,10 +156,10 @@ namespace MovieColour.Helper
         internal static byte[][] SplitStdoutByChunk(byte[] stdout, int chunkSize)
         {
             if (stdout == null || stdout.Length == 0)
-                throw new Exception("stdout is null or empty"); // ToDo
+                throw new Exception("stdout is null or empty"); // ToDo #12
 
             if (stdout.Length % chunkSize != 0)
-                throw new Exception("stdout length is not a multiple of chunk size"); // ToDo
+                throw new Exception("stdout length is not a multiple of chunk size"); // ToDo #12
 
             var chunks = new byte[stdout.Length / chunkSize][];
             for (int i = 0; i < chunks.Length; i++)
@@ -195,7 +194,13 @@ namespace MovieColour.Helper
                 RedirectStandardError = true
             };
         }
-        
+
+        /// <summary>
+        /// Get the default ProcessStartInfo for running a command for the given file (e.g. FFmpeg)
+        /// </summary>
+        /// <param name="fileName"></param>
+        /// <param name="command"></param>
+        /// <returns></returns>
         private static ProcessStartInfo GetCustomFileProcessStartInfo(string fileName, string command)
         {
             return new ProcessStartInfo
