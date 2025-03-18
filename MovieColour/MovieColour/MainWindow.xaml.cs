@@ -21,7 +21,7 @@ namespace MovieColour
     /// </summary>
     public partial class MainWindow
     {
-        private List<string> files;
+        private List<FileInfo> files;
         internal CancellationTokenSource cancellationTokenSource = new();
         internal static Logger logger;
 
@@ -110,18 +110,20 @@ namespace MovieColour
 
             if (ofd.ShowDialog() == true)
             {
-                files = new List<string>();
+                files = new List<FileInfo>();
                 foreach (string file in ofd.FileNames)
-                    files.Add(file);
+                {
+                    files.Add(new FileInfo(file));
+                }
                 if (files.Count == 1)
-                    this.TxtBxInputFile.Text = Path.GetFileName(files[0]);
+                    this.TxtBxInputFile.Text = files[0].Name;
                 else if (files.Count > 1)
                     this.TxtBxInputFile.Text = $"[{Strings.MultipleFilesSelected}]";
             }
 
             logger.Information(Strings.SelectedFiles);
-            foreach (string file in files)
-                logger.Information(file);
+            foreach (var fi in files)
+                logger.Information(fi.Name);
         }
 
         private async void BtnStart_OnClick(object sender, RoutedEventArgs e)
@@ -142,10 +144,9 @@ namespace MovieColour
 
                 var enableConversion = (bool)ChkBoxEnableConversion.IsChecked;
 
-                foreach (string file in files)
+                foreach (FileInfo fileInfo in files)
                 {
-
-                    logger.Information(string.Format(Strings.ProcessingFile, file));
+                    logger.Information(string.Format(Strings.ProcessingFile, fileInfo.Name));
                     this.ProgressBarAnalysis.Value = 0;
                     this.ProgressBarConversion.Value = 0;
                     this.ProgressBarExtraction.Value = 0;
@@ -153,8 +154,9 @@ namespace MovieColour
                     this.LblProgressExtractionTime.Content = new TimeSpan();
                     this.LblProgressAnalysisTime.Content = new TimeSpan();
 
-                    var fi = new FileInfo(file);
-                    var tmpfile = Path.Combine(fi.DirectoryName, $"tmp-{DateTime.Now:yy-MM-dd-HH-mm-ss}.mkv");
+                    var tmpfile = Path.Combine(fileInfo.DirectoryName, $"tmp-{DateTime.Now:yy-MM-dd-HH-mm-ss}.mkv");
+
+                    var fi = fileInfo;
 
                     if (enableConversion)
                     {
@@ -215,7 +217,7 @@ namespace MovieColour
                     logger.Information($"All batches took {sw2.Elapsed}");
                     logger.Information($"Average time per batch: {TimeSpan.FromTicks(sw2.Elapsed.Ticks / counter)}");
 
-                    CreateImages(new FileInfo(file), finalResult);
+                    CreateImages(fi, finalResult);
 
                     //Deletion of temporary files
                     if ((bool)this.ChkBoxDeleteByProducts.IsChecked && enableConversion)

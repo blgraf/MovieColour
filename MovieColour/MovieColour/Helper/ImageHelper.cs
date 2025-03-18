@@ -21,10 +21,11 @@ namespace MovieColour.Helper
         internal void ConvertToScale(string filePath, int scale, string outputPath, bool useGPU)
 		{
 			string crop = GetCropFromFile(filePath);
+            //crop += ",";
 
-			var command = CmdHelper.GetConvertCommand(filePath, crop, scale, outputPath);
+            var command = FfCmds.FfmpegConvertCommand(filePath, crop, scale, outputPath);
 
-			_ = CmdHelper.RunCommandAndGetStdoutAsString(command);
+			_ = CmdHelper.RunCommandAndGetStdoutAsString(FfCmds.Ffmpeg, command);
 		}
 
 		/// <summary>
@@ -150,7 +151,7 @@ namespace MovieColour.Helper
         /// <returns>The frame rate as a double</returns>
         internal static double GetFps(string fullFilePath)
         {
-            var output = CmdHelper.RunCommandAndGetStdoutAsString(CmdHelper.GetGetFpsCommand(fullFilePath));
+            var output = CmdHelper.RunCommandAndGetStdoutAsString(FfCmds.Ffprobe, FfCmds.FfprobeGetFpsCommand(fullFilePath));
 
             // This returns something like:
 			// stream.0.avg_frame_rate="24000/1001"
@@ -167,7 +168,7 @@ namespace MovieColour.Helper
 		/// <returns></returns>
 		internal static byte[] GetSingleFrameAsByteArray(string fullFilePath)
 		{
-            return CmdHelper.RunCommandAndGetStdoutAsByteArray(CmdHelper.GetSingleFrameCommand(fullFilePath));
+            return CmdHelper.RunCommandAndGetStdoutAsByteArray(FfCmds.Ffmpeg, FfCmds.FfmpegGetSingleFrameCommand(fullFilePath));
         }
 
         /// <summary>
@@ -180,7 +181,7 @@ namespace MovieColour.Helper
         /// <returns></returns>
         internal static byte[][] GetXFrames(string fullFilePath, double offsetInSeconds, int x, int chunkSize)
 		{
-			var stdout = CmdHelper.RunCommandAndGetStdoutAsByteArray(CmdHelper.GetXFramesCommand(fullFilePath, offsetInSeconds, x));
+			var stdout = CmdHelper.RunCommandAndGetStdoutAsByteArray(FfCmds.Ffmpeg, FfCmds.FfmpegGetXFramesCommand(fullFilePath, offsetInSeconds, x));
 			return CmdHelper.SplitStdoutByChunk(stdout, chunkSize);
         }
 
@@ -199,8 +200,8 @@ namespace MovieColour.Helper
 
 			var crop = String.Empty;
 
-			var command = CmdHelper.GetCropCommand(fullFilePath);
-			var result = CmdHelper.RunCommandAndGetStdoutAsString(command);
+			var command = FfCmds.FfmpegCropCommand(fullFilePath);
+			var result = CmdHelper.RunCommandAndGetStdoutAsString(FfCmds.Ffmpeg, command, true);
 
             var matches = RegexHelper.CropRegex().Matches(result);
 
@@ -210,13 +211,12 @@ namespace MovieColour.Helper
 					crop = matches[^1].Value;
 				else
 					crop = matches[0].Value;
-				crop += ",";
 			}
 
-			MainWindow.logger.Information(String.Format(Strings.CropFound, crop));
+			MainWindow.logger.Information(string.Format(Strings.CropFound, crop));
 
-			return crop;
-		}
+			return crop[5..]; // we don't need the "crop=" part
+        }
 
 		/// <summary>
 		/// Find the fullest bucket in the given array of buckets
