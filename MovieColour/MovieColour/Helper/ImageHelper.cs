@@ -1,4 +1,5 @@
-﻿using SixLabors.ImageSharp;
+﻿using Serilog;
+using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.PixelFormats;
 using System;
 using System.Collections.Generic;
@@ -21,7 +22,6 @@ namespace MovieColour.Helper
         internal void ConvertToScale(string filePath, int scale, string outputPath, bool useGPU)
 		{
 			string crop = GetCropFromFile(filePath);
-            //crop += ",";
 
             var command = FfCmds.FfmpegConvertCommand(filePath, crop, scale, outputPath);
 
@@ -158,7 +158,9 @@ namespace MovieColour.Helper
             // From this we need a RegEx, that extracts the numbers and divides them
             var match = RegexHelper.FramerateRegex().Match(output);
             var numbers = match.Value.Split('/');
-            return double.Parse(numbers[0]) / double.Parse(numbers[1]);
+			var fps = double.Parse(numbers[0]) / double.Parse(numbers[1]);
+			Log.Logger.Information(Strings.Fps0, fps);
+            return fps;
         }
 
 		/// <summary>
@@ -196,7 +198,7 @@ namespace MovieColour.Helper
 		/// <returns></returns>
         private string GetCropFromFile(string fullFilePath)
 		{
-			MainWindow.logger.Information(Strings.DetectingCrop);
+			Log.Logger.Information(Strings.DetectingCrop);
 
 			var crop = String.Empty;
 
@@ -213,7 +215,7 @@ namespace MovieColour.Helper
 					crop = matches[0].Value;
 			}
 
-			MainWindow.logger.Information(string.Format(Strings.CropFound, crop));
+			Log.Logger.Information(string.Format(Strings.CropFound, crop));
 
 			return crop[5..]; // we don't need the "crop=" part
         }

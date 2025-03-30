@@ -1,4 +1,4 @@
-﻿using Serilog.Core;
+﻿using Serilog;
 using System.IO;
 using System.Threading.Tasks;
 
@@ -12,12 +12,12 @@ namespace MovieColour.Helper
         /// <param name="path"></param>
         /// <param name="logger"></param>
         /// <returns></returns>
-        public static Task DeleteFileAsync(string path, Logger logger)
+        public static Task DeleteFileAsync(string path)
         {
             return Task.Run(() =>
             {
                 File.Delete(path);
-                logger.Information(string.Format(Strings.DeletedFile, path));
+                Log.Logger.Information(Strings.DeletedFile, path);
             });
         }
 

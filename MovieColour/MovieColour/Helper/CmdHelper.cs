@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Serilog;
+using System;
 using System.Diagnostics;
 using System.IO;
 using System.Text;
@@ -16,6 +17,7 @@ namespace MovieColour.Helper
         /// <returns></returns>
         internal static byte[] RunCommandAndGetStdoutAsByteArray(string fileName, string command)
         {
+            Log.Logger.Verbose("Running command: {FileName} {Command}", fileName, command);
             var startInfo = GetCustomFileProcessStartInfo(fileName, command);
 
             using var process = new Process
@@ -55,10 +57,11 @@ namespace MovieColour.Helper
             if (process.ExitCode != 0)
             {
                 var errorLog = stdErrBuilder.ToString();
-                // Log it, throw an exception, etc., as appropriate
-                Console.WriteLine("FFmpeg returned an error:\n" + errorLog); // ToDo #3
+                Log.Logger.Error(Strings.CommandThrewError0, command);
+                Log.Logger.Error(errorLog);
             }
 
+            Log.Logger.Verbose("Command executed successfully");
             return ms.ToArray();
         }
 
@@ -69,6 +72,7 @@ namespace MovieColour.Helper
         /// <returns></returns>
         internal static string RunCommandAndGetStdoutAsString(string fileName, string command, bool returnStdErrInstead = false)
         {
+            Log.Logger.Verbose("Running command: {FileName} {Command}", fileName, command);
             var startInfo = GetCustomFileProcessStartInfo(fileName, command);
 
             using var process = new Process { StartInfo = startInfo, EnableRaisingEvents = true };
@@ -104,41 +108,12 @@ namespace MovieColour.Helper
             // Check the exit code; if non-zero, examine stdErrBuilder
             if (process.ExitCode != 0)
             {
-                var errorLog = stdErrBuilder.ToString();
-                // Log it, throw an exception, etc., as appropriate
-                Console.WriteLine("FFmpeg returned an error:\n" + errorLog); // ToDo #3
+                Log.Logger.Error(Strings.CommandThrewError0, command);
+                Log.Logger.Error(error);
             }
 
+            Log.Logger.Verbose("Command executed successfully");
             return returnStdErrInstead ? error : output;
-        }
-
-        /// <summary>
-        /// Run a command and return the stdout as a string
-        /// </summary>
-        /// <param name="command"></param>
-        /// <returns></returns>
-        internal static string RunCommandAndGetStdoutAsString(string command)
-        {
-            var output = string.Empty;
-            try
-            {
-                var startInfo = GetCmdProcessStartInfo(command);
-
-                var process = Process.Start(startInfo);
-
-                output = process.StandardOutput.ReadToEnd();
-                var error = process.StandardError.ReadToEnd();
-                if (string.IsNullOrEmpty(output))
-                    throw new Exception(error); // ToDo #12
-
-                process.WaitForExit();
-
-                return output;
-            }
-            catch
-            {
-                return output;
-            }
         }
 
         #endregion
@@ -166,7 +141,7 @@ namespace MovieColour.Helper
                 // If an exception is thrown (for example, if the file isn't found),
                 // the executable is not available.
                 // ToDo #3 - Ensure style/call matches the rest
-                MainWindow.logger.Error(e.Message, Strings.ErrWhileCheckCmdAvailable, exeName);
+                Log.Logger.Error(e.Message, Strings.ErrWhileCheckCmdAvailable, exeName);
                 return false;
             }
         }
@@ -203,27 +178,8 @@ namespace MovieColour.Helper
         #region Private Methods
 
         /// <summary>
-        /// Get the default ProcessStartInfo for running a command in the command prompt
-        /// </summary>
-        /// <param name="command"></param>
-        /// <returns></returns>
-        private static ProcessStartInfo GetCmdProcessStartInfo(string command)
-        {
-            return new ProcessStartInfo
-            {
-                Verb = "runas",
-                FileName = "cmd.exe",
-                Arguments = $"/C {command}",
-                WindowStyle = ProcessWindowStyle.Hidden,
-                UseShellExecute = false,
-                CreateNoWindow = true,
-                RedirectStandardOutput = true,
-                RedirectStandardError = true
-            };
-        }
-
-        /// <summary>
         /// Get the default ProcessStartInfo for running a command for the given file (e.g. FFmpeg)
+        /// Can also be used to run a command in the command prompt (fileName = "cmd.exe", command starting with "/C ")
         /// </summary>
         /// <param name="fileName"></param>
         /// <param name="command"></param>

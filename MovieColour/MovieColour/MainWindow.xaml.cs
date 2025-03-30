@@ -2,7 +2,6 @@
 using MovieColour.Helper;
 using MovieColour.Views;
 using Serilog;
-using Serilog.Core;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.Processing;
 using System;
@@ -24,7 +23,6 @@ namespace MovieColour
     {
         private List<FileInfo> files;
         internal CancellationTokenSource cancellationTokenSource = new();
-        internal static Logger logger;
 
         public MainWindow()
         {
@@ -34,30 +32,19 @@ namespace MovieColour
 
             SetDefaultValues();
 
-            logger = new LoggerConfiguration()
+            Log.Logger = new LoggerConfiguration()
                 .WriteTo.RichTextBox(RchTxtBxLog)
-                .MinimumLevel.Verbose()
+                .MinimumLevel.Information()
                 .CreateLogger();
 
-            CheckFfmpegAvailability();
+            Loaded += MainWindow_Loaded;
         }
 
         #region EventHandlers
 
-        /// <summary>
-        /// Checks if FFmpeg and FFprobe are available frmot the command line
-        /// Displays an error if not
-        /// </summary>
-        private void CheckFfmpegAvailability()
+        private void MainWindow_Loaded(object sender, RoutedEventArgs e)
         {
-            if (!CmdHelper.IsExecutableAvailable(FfCmds.Ffmpeg) || !CmdHelper.IsExecutableAvailable(FfCmds.Ffprobe))
-            {
-                logger.Error(Strings.ErrFfmpegNotAvailablePlsInstall);
-
-                var dialog = new GenericDialog(Strings.ErrFfmpegNotAvailablePlsInstall);
-                dialog.Owner = this; 
-                dialog.ShowDialog();
-            }
+            CheckFfmpegAvailability();
         }
 
         private void Window_Closing(object sender, System.ComponentModel.CancelEventArgs e)
@@ -76,7 +63,7 @@ namespace MovieColour
         private void BrnResetToDefault_OnClick(object sender, RoutedEventArgs e)
         {
             SetDefaultValues();
-            logger.Information(Strings.RestoredDefaultValues);
+            Log.Logger.Information(Strings.RestoredDefaultValues);
         }
 
         private void CkBxShowOutputLog_OnClick(object sender, RoutedEventArgs e)
@@ -100,8 +87,7 @@ namespace MovieColour
 
         private void ChkBoxSaveLogToFile_OnClick(object sender, RoutedEventArgs e)
         {
-            logger = new LoggerConfiguration()
-                //.WriteTo.Console()
+            Log.Logger = new LoggerConfiguration()
                 .WriteTo.File(@".\log.txt",
                     outputTemplate: "{Timestamp:[yyyy-MM-dd HH:mm:ss]} [{Level:u3}] | {Message:lj}{NewLine}{Exception}",
                     encoding: System.Text.Encoding.UTF8)
@@ -117,7 +103,7 @@ namespace MovieColour
 
         private void BtnChooseInputFile_OnClick(object sender, RoutedEventArgs e)
         {
-            OpenFileDialog ofd = new OpenFileDialog
+            var ofd = new OpenFileDialog
             {
                 Multiselect = true,
                 Filter = $"{Strings.FilterVideoFiles} (*.mkv;*.mp4)|*.mkv;*.mp4|{Strings.FilterAllFiles} (*.*)|*.*",
@@ -129,7 +115,7 @@ namespace MovieColour
 
             if (ofd.ShowDialog() == true)
             {
-                files = new List<FileInfo>();
+                files = [];
                 foreach (string file in ofd.FileNames)
                 {
                     files.Add(new FileInfo(file));
@@ -140,9 +126,9 @@ namespace MovieColour
                     this.TxtBxInputFile.Text = $"[{Strings.MultipleFilesSelected}]";
             }
 
-            logger.Information(Strings.SelectedFiles);
+            Log.Logger.Information(Strings.SelectedFiles);
             foreach (var fi in files)
-                logger.Information(fi.Name);
+                Log.Logger.Information(fi.Name);
         }
 
         private async void BtnStart_OnClick(object sender, RoutedEventArgs e)
@@ -165,7 +151,7 @@ namespace MovieColour
 
                 foreach (FileInfo fileInfo in files)
                 {
-                    logger.Information(string.Format(Strings.ProcessingFile, fileInfo.Name));
+                    Log.Logger.Information(Strings.ProcessingFile, fileInfo.Name);
                     this.ProgressBarAnalysis.Value = 0;
                     this.ProgressBarConversion.Value = 0;
                     this.ProgressBarExtraction.Value = 0;
@@ -173,7 +159,7 @@ namespace MovieColour
                     this.LblProgressExtractionTime.Content = new TimeSpan();
                     this.LblProgressAnalysisTime.Content = new TimeSpan();
 
-                    var tmpfile = Path.Combine(fileInfo.DirectoryName, $"tmp-{DateTime.Now:yy-MM-dd-HH-mm-ss}.mkv");
+                    var tmpfile = Path.Combine(fileInfo.DirectoryName, $"tmp-{DateTime.Now:yy-MM-dd-HH-mm-ss}.mkv"); // ToDo #10
 
                     var fi = fileInfo;
 
@@ -195,7 +181,7 @@ namespace MovieColour
                     var singleFrameSize = ImageHelper.GetSingleFrameAsByteArray(fi.FullName).Length;
                     int framesPerBatch = int.MaxValue / singleFrameSize;
 
-                    logger.Information($"Batch size: {framesPerBatch} frames");
+                    Log.Logger.Information(Strings.BatchSizeFrames, framesPerBatch);
 
                     var allResults = new List<AnalysisResult>();
 
@@ -218,7 +204,8 @@ namespace MovieColour
 
                         var intermediateResult = await AnalyseFrames(frames, methods);
                         allResults.Add(intermediateResult);
-                        logger.Information($"Batch {counter} took {sw.Elapsed}");
+                        var batchSec = Math.Truncate(sw.Elapsed.TotalSeconds * 100) / 100;
+                        Log.Logger.Information(Strings.BatchXTookYs, counter, batchSec);
                         sw.Restart();
                     }
                     while (hasMoreFrames);
@@ -233,16 +220,18 @@ namespace MovieColour
                         FrameMostFrequentResult = allResults.SelectMany(x => x.FrameMostFrequentResult).ToArray()
                     };
 
-                    logger.Information($"All batches took {sw2.Elapsed}");
-                    logger.Information($"Average time per batch: {TimeSpan.FromTicks(sw2.Elapsed.Ticks / counter)}");
+                    var (min, sec) = GetMinSecFromTimeSpan(sw2.Elapsed);
+                    var avgSec = Math.Truncate((sw2.Elapsed.TotalSeconds / counter) * 100) / 100;
+                    Log.Logger.Information(Strings.AllBatchProcessTime, min, sec);
+                    Log.Logger.Information(Strings.AvgTimePerBatch,  avgSec);
 
                     CreateImages(fi, finalResult);
 
                     //Deletion of temporary files
                     if ((bool)this.ChkBoxDeleteByProducts.IsChecked && enableConversion)
                     {
-                        logger.Information(Strings.DeletingTmpMovieFile);
-                        _ = AsyncHelper.DeleteFileAsync(tmpfile, logger);
+                        Log.Logger.Information(Strings.DeletingTmpMovieFile);
+                        _ = AsyncHelper.DeleteFileAsync(tmpfile);
                     }
                 }
             }
@@ -252,20 +241,27 @@ namespace MovieColour
                 {
                     if (ex.Message.Equals("The operation was canceled."))
                     {
-                        logger.Information(Strings.CancellationMessage);
+                        Log.Logger.Information(Strings.CancellationMessage);
                     }
                     else
                     {
-                        logger.Error("{Exeption}", ex.Message);
-                        MessageBox.Show(Application.Current.MainWindow, ex.Message, Strings.Error, MessageBoxButton.OK, MessageBoxImage.Error);
+                        Log.Logger.Error("{Exeption}", ex.Message);
+
+                        var dialog = new GenericDialog(ex.Message);
+                        dialog.Owner = this;
+                        dialog.ShowDialog();
                     }
                 }
                 else
                 {
-                    logger.Error("{Exeption}", ex.Message);
-                    MessageBox.Show(Application.Current.MainWindow, ex.Message, Strings.Error, MessageBoxButton.OK, MessageBoxImage.Error);
+                    Log.Logger.Error("{Exeption}", ex.Message);
+
+                    var dialog = new GenericDialog(ex.Message);
+                    dialog.Owner = this;
+                    dialog.ShowDialog();
                 }
             }
+            Log.Logger.Information(Strings.AllFilesProcessed);
             this.BtnStart.IsEnabled = true;
         }
 
@@ -287,8 +283,8 @@ namespace MovieColour
             this.TxtBxInputFile.IsReadOnly = true;
             this.TxtBxFrameCount.Text = "1";
             this.TxtBxWorkingScale.Text = "360";
-            this.TxtBxOutputResolutionX.Text = "5120";
-            this.TxtBxOutputResolutionY.Text = "1440";
+            this.TxtBxOutputResolutionX.Text = "7680";
+            this.TxtBxOutputResolutionY.Text = "4320";
 
             this.BtnCancel.IsEnabled = false;
 
@@ -319,7 +315,7 @@ namespace MovieColour
         /// <returns></returns>
         private async Task ConvertMovie(string inputfile, string tmpfile)
         {
-            logger.Information(Strings.ConversionStarted);
+            Log.Logger.Information(Strings.ConversionStarted);
 
             Progress<int> progress;
             var watch = new Stopwatch();
@@ -332,9 +328,9 @@ namespace MovieColour
                 if (percent > 0)
                 {
                     var eta = (int)(ts.TotalSeconds * 10 / percent / 6);
-                    LblProgressConversionTime.Content = String.Format(Strings.EstRemaining, eta);
+                    LblProgressConversionTime.Content = string.Format(Strings.EstRemaining, eta);
                 }
-            });
+            }); // ToDo #4
 
             movieColourHelper.Progress = progress;
             movieColourHelper.InputFile = inputfile;
@@ -342,7 +338,7 @@ namespace MovieColour
             watch.Start();
 
             if (!int.TryParse(TxtBxWorkingScale.Text, out int scale))
-                throw new Exception("non-int scale");
+                throw new Exception("non-int scale"); // ToDo #12
 
             movieColourHelper.ConvertMovieAsync(scale, tmpfile, (bool)ChkBoxGPU.IsChecked);
 
@@ -352,7 +348,7 @@ namespace MovieColour
             LblProgressConversionTime.Content = $"{Strings.Elapsed}: {ts.Hours:00}:{ts.Minutes:00}:{ts.Seconds:00}";
             watch.Reset();
 
-            logger.Information(Strings.ConversionFinished);
+            Log.Logger.Information(Strings.ConversionFinished);
         }
 
         /// <summary>
@@ -363,7 +359,7 @@ namespace MovieColour
         /// <returns></returns>
         private async Task<AnalysisResult> AnalyseFrames(byte[][] files, List<AnalysisMethod> methods)
         {
-            logger.Information(Strings.AnalysisStarted);
+            Log.Logger.Information(Strings.AnalysisStarted);
             Progress<int> progress;
             var watch = new Stopwatch();
             var movieColourHelper = new MovieColourHelper();
@@ -395,7 +391,7 @@ namespace MovieColour
             LblProgressAnalysisTime.Content = $"{Strings.Elapsed}: {ts.Hours:00}:{ts.Minutes:00}:{ts.Seconds:00}";
             watch.Reset();
 
-            logger.Information(Strings.AnalysisFinished);
+            Log.Logger.Information(Strings.AnalysisFinished);
             return ret;
         }
 
@@ -406,7 +402,7 @@ namespace MovieColour
         /// <param name="analysisResult"></param>
         private void CreateImages(FileInfo moviefile, AnalysisResult analysisResult)
         {
-            logger.Information(Strings.CreatingImages);
+            Log.Logger.Information(Strings.CreatingImages);
 
             //CreateImageByMethodFromColourArray(moviefile, AnalysisMethod.BucketAvgTotal, DicColours.BucketAvgTotalResult);
             //CreateImageByMethodFromColourArray(moviefile, AnalysisMethod.BucketAvgMinMax, DicColours.BucketAvgMinMaxResult);
@@ -480,6 +476,30 @@ namespace MovieColour
                 list.Add(AnalysisMethod.FrameMedian);
 
             return list;
+        }
+
+        private static (int min, int sec) GetMinSecFromTimeSpan(TimeSpan ts)
+        {
+            var totalSeconds = ts.TotalSeconds;
+            var minutes = (int)(totalSeconds / 60);
+            int seconds = (int)(Math.Ceiling(totalSeconds) % 60);
+            return (minutes, seconds);
+        }
+
+        /// <summary>
+        /// Checks if FFmpeg and FFprobe are available frmot the command line
+        /// Displays an error if not
+        /// </summary>
+        private void CheckFfmpegAvailability()
+        {
+            if (!CmdHelper.IsExecutableAvailable(FfCmds.Ffmpeg) || !CmdHelper.IsExecutableAvailable(FfCmds.Ffprobe))
+            {
+                Log.Logger.Error(Strings.ErrFfmpegNotAvailablePlsInstall);
+
+                var dialog = new GenericDialog(Strings.ErrFfmpegNotAvailablePlsInstall);
+                dialog.Owner = this;
+                dialog.ShowDialog();
+            }
         }
     }
 }

@@ -70,6 +70,24 @@ namespace MovieColour {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to All batches took {0} min, {1} s.
+        /// </summary>
+        public static string AllBatchProcessTime {
+            get {
+                return ResourceManager.GetString("AllBatchProcessTime", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to All files processed.
+        /// </summary>
+        public static string AllFilesProcessed {
+            get {
+                return ResourceManager.GetString("AllFilesProcessed", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Analyse every X-th frame.
         /// </summary>
         public static string AnalyseXthFrame {
@@ -120,6 +138,33 @@ namespace MovieColour {
         public static string AvgFrame {
             get {
                 return ResourceManager.GetString("AvgFrame", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Average time per batch: {0} s.
+        /// </summary>
+        public static string AvgTimePerBatch {
+            get {
+                return ResourceManager.GetString("AvgTimePerBatch", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Batch size: {0} frames.
+        /// </summary>
+        public static string BatchSizeFrames {
+            get {
+                return ResourceManager.GetString("BatchSizeFrames", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Batch {0} took {1} s.
+        /// </summary>
+        public static string BatchXTookYs {
+            get {
+                return ResourceManager.GetString("BatchXTookYs", resourceCulture);
             }
         }
         
@@ -192,6 +237,15 @@ namespace MovieColour {
         public static string ChooseFile {
             get {
                 return ResourceManager.GetString("ChooseFile", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to The following command returned an error: {0}.
+        /// </summary>
+        public static string CommandThrewError0 {
+            get {
+                return ResourceManager.GetString("CommandThrewError0", resourceCulture);
             }
         }
         
@@ -417,6 +471,15 @@ namespace MovieColour {
         public static string FilterVideoFiles {
             get {
                 return ResourceManager.GetString("FilterVideoFiles", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to FPS: {0}.
+        /// </summary>
+        public static string Fps0 {
+            get {
+                return ResourceManager.GetString("Fps0", resourceCulture);
             }
         }
         
