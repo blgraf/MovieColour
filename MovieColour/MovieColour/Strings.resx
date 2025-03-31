@@ -291,4 +291,10 @@
   <data name="ImageResizer" xml:space="preserve">
     <value>Image Resizer</value>
   </data>
+  <data name="ErrWhileCheckCmdAvailable" xml:space="preserve">
+    <value>Error checking if {0} is available</value>
+  </data>
+  <data name="ErrFfmpegNotAvailablePlsInstall" xml:space="preserve">
+    <value>FFmpeg and/or FFprobe are not available on this system. Please install them and/or add them to your PATH.</value>
+  </data>
 </root>

@@ -331,6 +331,15 @@ namespace MovieColour {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to FFmpeg and/or FFprobe are not available on this system. Please install them and/or add them to your PATH..
+        /// </summary>
+        public static string ErrFfmpegNotAvailablePlsInstall {
+            get {
+                return ResourceManager.GetString("ErrFfmpegNotAvailablePlsInstall", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Error.
         /// </summary>
         public static string Error {
@@ -345,6 +354,15 @@ namespace MovieColour {
         public static string ErrorMustSelectAnalysisMethod {
             get {
                 return ResourceManager.GetString("ErrorMustSelectAnalysisMethod", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Error checking if {0} is available.
+        /// </summary>
+        public static string ErrWhileCheckCmdAvailable {
+            get {
+                return ResourceManager.GetString("ErrWhileCheckCmdAvailable", resourceCulture);
             }
         }
         

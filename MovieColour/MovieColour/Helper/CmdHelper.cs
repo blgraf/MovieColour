@@ -18,10 +18,10 @@ namespace MovieColour.Helper
         {
             var startInfo = GetCustomFileProcessStartInfo(fileName, command);
 
-            using var process = new Process 
-            { 
-                StartInfo = startInfo, 
-                EnableRaisingEvents = true 
+            using var process = new Process
+            {
+                StartInfo = startInfo,
+                EnableRaisingEvents = true
             };
             var stdErrBuilder = new StringBuilder();
 
@@ -144,6 +144,33 @@ namespace MovieColour.Helper
         #endregion
 
         #region Utilities
+
+        /// <summary>
+        /// Checks if the given executable is available on the system by trying to run it with a version argument
+        /// </summary>
+        /// <param name="exeName"></param>
+        /// <param name="argument"></param>
+        /// <returns>True, if process exited with code 0, else false and logs error </returns>
+        internal static bool IsExecutableAvailable(string exeName, string argument = "-version")
+        {
+            try
+            {
+                var startInfo = GetCustomFileProcessStartInfo(exeName, argument);
+
+                using var process = Process.Start(startInfo);
+                process.WaitForExit(3000);
+                return process.ExitCode == 0;
+            }
+            catch (Exception e)
+            {
+                // If an exception is thrown (for example, if the file isn't found),
+                // the executable is not available.
+                // ToDo #3 - Ensure style/call matches the rest
+                MainWindow.logger.Error(e.Message, Strings.ErrWhileCheckCmdAvailable, exeName);
+                return false;
+            }
+        }
+
 
         /// <summary>
         /// Split a byte array into chunks of a specified size

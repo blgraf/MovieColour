@@ -1,5 +1,6 @@
 ﻿using Microsoft.Win32;
 using MovieColour.Helper;
+using MovieColour.Views;
 using Serilog;
 using Serilog.Core;
 using SixLabors.ImageSharp;
@@ -37,9 +38,27 @@ namespace MovieColour
                 .WriteTo.RichTextBox(RchTxtBxLog)
                 .MinimumLevel.Verbose()
                 .CreateLogger();
+
+            CheckFfmpegAvailability();
         }
 
         #region EventHandlers
+
+        /// <summary>
+        /// Checks if FFmpeg and FFprobe are available frmot the command line
+        /// Displays an error if not
+        /// </summary>
+        private void CheckFfmpegAvailability()
+        {
+            if (!CmdHelper.IsExecutableAvailable(FfCmds.Ffmpeg) || !CmdHelper.IsExecutableAvailable(FfCmds.Ffprobe))
+            {
+                logger.Error(Strings.ErrFfmpegNotAvailablePlsInstall);
+
+                var dialog = new GenericDialog(Strings.ErrFfmpegNotAvailablePlsInstall);
+                dialog.Owner = this; 
+                dialog.ShowDialog();
+            }
+        }
 
         private void Window_Closing(object sender, System.ComponentModel.CancelEventArgs e)
         {
