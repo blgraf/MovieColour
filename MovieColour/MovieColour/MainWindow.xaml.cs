@@ -9,6 +9,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
@@ -159,13 +160,16 @@ namespace MovieColour
                     this.LblProgressExtractionTime.Content = new TimeSpan();
                     this.LblProgressAnalysisTime.Content = new TimeSpan();
 
-                    var tmpfile = Path.Combine(fileInfo.DirectoryName, $"tmp-{DateTime.Now:yy-MM-dd-HH-mm-ss}.mkv"); // ToDo #10
+                    if (!int.TryParse(TxtBxWorkingScale.Text, out int scale))
+                        throw new Exception("non-int scale"); // ToDo #12
+
+                    var tmpfile = Path.Combine(fileInfo.DirectoryName, $"tmp-{fileInfo.Name[..25]}-{scale}p-{DateTime.Now:yy-MM-dd-HH-mm-ss}.mkv");
 
                     var fi = fileInfo;
 
                     if (enableConversion)
                     {
-                        await ConvertMovie(fi.FullName, tmpfile);
+                        await ConvertMovie(fi.FullName, tmpfile, scale);
                         fi = new FileInfo(tmpfile);
                     }
 
@@ -313,7 +317,7 @@ namespace MovieColour
         /// <param name="inputfile"></param>
         /// <param name="tmpfile"></param>
         /// <returns></returns>
-        private async Task ConvertMovie(string inputfile, string tmpfile)
+        private async Task ConvertMovie(string inputfile, string tmpfile, int scale)
         {
             Log.Logger.Information(Strings.ConversionStarted);
 
@@ -336,9 +340,6 @@ namespace MovieColour
             movieColourHelper.InputFile = inputfile;
 
             watch.Start();
-
-            if (!int.TryParse(TxtBxWorkingScale.Text, out int scale))
-                throw new Exception("non-int scale"); // ToDo #12
 
             movieColourHelper.ConvertMovieAsync(scale, tmpfile, (bool)ChkBoxGPU.IsChecked);
 
@@ -414,6 +415,8 @@ namespace MovieColour
 
         /// <summary>
         /// Creates an image from a colour array. The given method affects the filename
+        /// The final name is <moviefile>-<framecount>-<method>.png (with a prefix for the fullsized image)
+        /// The final image is resized to the given resolution and has its brightness increased by the given value
         /// </summary>
         /// <param name="movieFile"></param>
         /// <param name="method"></param>
@@ -422,31 +425,51 @@ namespace MovieColour
         {
             var img = ImageHelper.CreateBarcodeImageFromColours(colours);
 
-            var filename = movieFile.DirectoryName + "\\" + movieFile.Name[..^4] + "-" + int.Parse(TxtBxFrameCount.Text);
-            filename += "-ff";
+            if (int.TryParse(this.TxtBxIncreaseBrightness.Text.Trim(), out int brightnessIncrease))
+            {
+                if (brightnessIncrease != 0)
+                    img.Mutate(x =>
+                        x.Brightness(
+                            1 + (brightnessIncrease / 100f)
+                        )
+                    );
+            }
 
-            if (method == AnalysisMethod.FrameAvg)
-                filename += "-AvgC";
-            else if (method == AnalysisMethod.FrameMostFrequent)
-                filename += "-FrqC";
+            // Get filename based on file & method
+            var filenameBuilder = new StringBuilder();
+            filenameBuilder.Append(movieFile.DirectoryName);
+            filenameBuilder.Append('\\');
+            filenameBuilder.Append(movieFile.Name[..^4]);
+            filenameBuilder.Append(int.Parse(TxtBxFrameCount.Text));
 
-            var filenameFullsized = filename + "-FULLSIZED.png";
-            filename += ".png";
+            var fullsizedNameBuilder = new StringBuilder(filenameBuilder.ToString());
+            fullsizedNameBuilder.Append("_FULLSIZED");
 
-            var brightnessIncrease = int.Parse(this.TxtBxIncreaseBrightness.Text.Trim());
+            string methodString;
+            switch (method)
+            {
+                case AnalysisMethod.FrameAvg:
+                    methodString = "-Average";
+                    break;
+                case AnalysisMethod.FrameMostFrequent:
+                    methodString = "-MostFrequent";
+                    break;
+                default:
+                    methodString = $"-{method}";
+                    break;
+            }
 
-            if (brightnessIncrease != 0)
-                img.Mutate(x =>
-                    x.Brightness(
-                        1 + (brightnessIncrease / 100f)
-                    )
-                );
+            var pngSuffix = ".png";
 
+            var filenameFullsized = string.Concat(fullsizedNameBuilder.ToString(), methodString, pngSuffix);
+            var filenameNormal = string.Concat(filenameBuilder.ToString(), methodString, pngSuffix);
+
+            // Save fullsized & normal image
             img.SaveAsPng(filenameFullsized);
 
             img.Mutate(x => x.Resize(int.Parse(TxtBxOutputResolutionX.Text), int.Parse(TxtBxOutputResolutionY.Text)));
 
-            img.SaveAsPng(filename);
+            img.SaveAsPng(filenameNormal);
         }
 
         /// <summary>
@@ -499,6 +522,8 @@ namespace MovieColour
                 var dialog = new GenericDialog(Strings.ErrFfmpegNotAvailablePlsInstall);
                 dialog.Owner = this;
                 dialog.ShowDialog();
+
+                this.BtnStart.IsEnabled = false;
             }
         }
     }
