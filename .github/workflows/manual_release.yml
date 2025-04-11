@@ -25,14 +25,7 @@ jobs:
       - name: Restore and Publish
         run: |
           dotnet restore ./MovieColour/MovieColour/MovieColour.csproj
-          dotnet publish ./MovieColour/MovieColour/MovieColour.csproj ^
-            -c Release ^
-            -r win-x64 ^
-            -p:PublishSingleFile=true ^
-            --self-contained false ^
-            -p:DebugType=None ^
-            -p:DebugSymbols=false ^
-            -o ./
+          dotnet publish ./MovieColour/MovieColour/MovieColour.csproj -c Release -r win-x64 -p:PublishSingleFile=true --self-contained false -p:DebugType=None -p:DebugSymbols=false -o ./
 
       - name: Create GitHub Release
         id: create_release
