@@ -163,7 +163,7 @@ namespace MovieColour
                     if (!int.TryParse(TxtBxWorkingScale.Text, out int scale))
                         throw new Exception("non-int scale"); // ToDo #12
 
-                    var tmpfile = Path.Combine(fileInfo.DirectoryName, $"tmp-{fileInfo.Name[..25]}-{scale}p-{DateTime.Now:yy-MM-dd-HH-mm-ss}.mkv");
+                    var tmpfile = GetTmpfileName(fileInfo, scale);
 
                     var fi = fileInfo;
 
@@ -267,6 +267,22 @@ namespace MovieColour
             }
             Log.Logger.Information(Strings.AllFilesProcessed);
             this.BtnStart.IsEnabled = true;
+        }
+
+        /// <summary>
+        /// Gets a temporary file name based on the original file name, scale, and current date/time, ensuring the filename won't be too long by truncating the original name
+        /// </summary>
+        /// <param name="fileInfo"></param>
+        /// <param name="scale"></param>
+        /// <returns></returns>
+        private string GetTmpfileName(FileInfo fileInfo, int scale)
+        {
+            var filename = fileInfo.Name;
+            filename = filename[..^4]; // Remove the file extension (.mkv or .mp4)
+
+            if (filename.Length > 25)
+                filename = filename[..25]; // Limit to 25 characters
+            return Path.Combine(fileInfo.DirectoryName, $"tmp_{filename}_{scale}p_{DateTime.Now:yy-MM-dd-HH-mm-ss}.mkv");
         }
 
         #endregion
