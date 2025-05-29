@@ -47,3 +47,5 @@ jobs:
           asset_path: ./MovieColour.exe
           asset_name: MovieColour.exe
           asset_content_type: application/octet-stream
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
