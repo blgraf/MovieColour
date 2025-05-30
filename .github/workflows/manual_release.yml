@@ -5,7 +5,7 @@ on:
     inputs:
       version:
         description: 'Version'
-        default: 'v1.0'
+        default: 'v'
         required: true
         type: string
         
@@ -24,17 +24,21 @@ jobs:
         with:
           dotnet-version: '8.0.x'  # or whichever .NET version you use
 
-      - name: Restore and Publish
+      - name: Restore and Publish self-contained
         run: |
           dotnet restore ./MovieColour/MovieColour/MovieColour.csproj
           dotnet publish ./MovieColour/MovieColour/MovieColour.csproj -c Release -r win-x64 -p:PublishSingleFile=true --self-contained false -p:DebugType=None -p:DebugSymbols=false -o ./
-
+      
+      - name: Zip source
+        run: |
+          git archive --format zip --output source.zip HEAD
+      
       - name: Create GitHub Release
         id: create_release
         uses: actions/create-release@v1
         with:
           tag_name: ${{ inputs.version }}
-          release_name: 'v1.0.0 Single-File Release'
+          release_name: ${{ inputs.version }}
           draft: true
           prerelease: false
         env:
@@ -49,3 +53,13 @@ jobs:
           asset_content_type: application/octet-stream
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Upload source zip
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./source.zip
+          asset_name: source-${{ inputs.version }}.zip
+          asset_content_type: application/zip
