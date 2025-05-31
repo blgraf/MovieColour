@@ -32,16 +32,12 @@ jobs:
       - name: Setup .NET
         uses: actions/setup-dotnet@v3
         with:
-          dotnet-version: '8.0.x'  # or whichever .NET version you use
+          dotnet-version: '8.0.x'
 
       - name: Restore and Publish self-contained
         run: |
           dotnet restore ./MovieColour/MovieColour/MovieColour.csproj
           dotnet publish ./MovieColour/MovieColour/MovieColour.csproj -c Release -r win-x64 -p:PublishSingleFile=true --self-contained false -p:DebugType=None -p:DebugSymbols=false -o ./
-      
-      - name: Zip source
-        run: |
-          git archive --format zip --output source.zip HEAD
       
       - name: Create GitHub Release
         id: create_release
@@ -64,13 +60,3 @@ jobs:
           asset_path: ./MovieColour.exe
           asset_name: MovieColour.exe
           asset_content_type: application/octet-stream
-
-      - name: Upload source zip
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./source.zip
-          asset_name: source-${{ inputs.version }}.zip
-          asset_content_type: application/zip
