@@ -52,7 +52,7 @@ jobs:
           tag_name: ${{ inputs.version }}
           release_name: ${{ inputs.version }} ${{ inputs.title }}
           body: ${{ inputs.description }}
-          draft: true
+          draft: false
           prerelease: false
 
       - name: Upload EXE to Release
