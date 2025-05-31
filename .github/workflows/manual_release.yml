@@ -8,6 +8,16 @@ on:
         default: 'v'
         required: true
         type: string
+      title:
+        description: 'Additional title'
+        default: ''
+        required: false
+        type: string
+      description:
+        description: 'Description'
+        default: ''
+        required: true
+        type: string
         
 jobs:
   build-and-release:
@@ -36,23 +46,24 @@ jobs:
       - name: Create GitHub Release
         id: create_release
         uses: actions/create-release@v1
-        with:
-          tag_name: ${{ inputs.version }}
-          release_name: ${{ inputs.version }}
-          draft: true
-          prerelease: false
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ inputs.version }}
+          release_name: ${{ inputs.version }} ${{ inputs.title }}
+          body: ${{ inputs.description }}
+          draft: true
+          prerelease: false
 
       - name: Upload EXE to Release
         uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
           asset_path: ./MovieColour.exe
           asset_name: MovieColour.exe
           asset_content_type: application/octet-stream
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Upload source zip
         uses: actions/upload-release-asset@v1
