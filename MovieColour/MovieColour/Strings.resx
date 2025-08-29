@@ -318,4 +318,10 @@
   <data name="CommandThrewError0" xml:space="preserve">
     <value>The following command returned an error: {0}</value>
   </data>
+  <data name="ErrorDurationNotIntGot" xml:space="preserve">
+    <value>Could not get duration as a number from video file. Received: {0}</value>
+  </data>
+  <data name="ErrorNoCropFound" xml:space="preserve">
+    <value>Could not find crop from file with result {0}</value>
+  </data>
 </root>

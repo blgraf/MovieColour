@@ -403,11 +403,29 @@ namespace MovieColour {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Could not get duration as a number from video file. Received: {0}.
+        /// </summary>
+        public static string ErrorDurationNotIntGot {
+            get {
+                return ResourceManager.GetString("ErrorDurationNotIntGot", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Must select at least one analysis method.
         /// </summary>
         public static string ErrorMustSelectAnalysisMethod {
             get {
                 return ResourceManager.GetString("ErrorMustSelectAnalysisMethod", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Could not find crop from file with result {0}.
+        /// </summary>
+        public static string ErrorNoCropFound {
+            get {
+                return ResourceManager.GetString("ErrorNoCropFound", resourceCulture);
             }
         }
         

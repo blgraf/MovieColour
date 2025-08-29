@@ -5,17 +5,20 @@
         internal static string Ffmpeg = "ffmpeg";
         internal static string Ffprobe = "ffprobe";
 
+        #region Ffmpeg commands
+
         /// <summary>
         /// Get the command to determine the crop from a video file
         /// </summary>
         /// <param name="fullFilePath"></param>
+        /// <param name="secondsIntoVideo">How far into the video the check should be performed</param>
         /// <returns></returns>
-        internal static string FfmpegCropCommand(string fullFilePath)
+        internal static string FfmpegCropCommand(string fullFilePath, int secondsIntoVideo = 90)
             => 
             // -ss 90: start at 90 seconds
             // is an issue if the video is shorter than 90 seconds
             // ToDo: #31 - Check for video length to adjust crop check
-            $"-hide_banner -i \"{fullFilePath}\" -ss 90 -vframes 10 -vf cropdetect -f null -";
+            $"-hide_banner -i \"{fullFilePath}\" -ss {secondsIntoVideo} -vframes 10 -vf cropdetect -f null -";
         
 
         /// <summary>
@@ -30,14 +33,6 @@
         /// <returns></returns>
         internal static string FfmpegConvertCommand(string fullFilePath, string crop, int scale, string outputFilePath) =>
             $"-hide_banner -i \"{fullFilePath}\" -map 0:v:0 -vf crop={crop},scale=-2:{scale} -sws_flags sinc \"{outputFilePath}\"";
-
-        /// <summary>
-        /// Get the command to get the frame rate of a video file
-        /// </summary>
-        /// <param name="fullFilePath"></param>
-        /// <returns></returns>
-        internal static string FfprobeGetFpsCommand(string fullFilePath) =>
-            $"\"{fullFilePath}\" -v 0 -select_streams v:0 -print_format flat -show_entries stream=avg_frame_rate";
 
         /// <summary>
         /// Get the command to get the first frame of a video file which will be output as a byte representation of a BMP file to stdout
@@ -56,6 +51,28 @@
         /// <returns></returns>
         internal static string FfmpegGetXFramesCommand(string fullFilePath, double offsetInSeconds, int x) =>
             $"-hide_banner -ss {offsetInSeconds}s -i \"{fullFilePath}\" -frames:v {x} -c:v bmp -f image2pipe -";
+
+        #endregion
+
+        #region Ffprobe commands
+
+        /// <summary>
+        /// Get the command to get the frame rate of a video file
+        /// </summary>
+        /// <param name="fullFilePath"></param>
+        /// <returns></returns>
+        internal static string FfprobeGetFpsCommand(string fullFilePath) =>
+            $"\"{fullFilePath}\" -v 0 -select_streams v:0 -print_format flat -show_entries stream=avg_frame_rate";
+
+        /// <summary>
+        /// Get the command to get the duration of a video file
+        /// </summary>
+        /// <param name="fullFilePath"></param>
+        /// <returns></returns>
+        internal static string FfprobeGetDurationCommand(string fullFilePath) =>
+            $"\"{fullFilePath}\" -v 0 -select_streams v:0 -show_entries format=duration -of default=noprint_wrappers=1:nokey=1";
+
+        #endregion
 
     }
 }

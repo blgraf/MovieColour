@@ -9,7 +9,7 @@ using static MovieColour.Helper.Enums;
 namespace MovieColour.Helper
 {
     internal class ImageHelper
-	{
+    {
         #region Internal methods
 
         /// <summary>
@@ -20,129 +20,129 @@ namespace MovieColour.Helper
         /// <param name="outputPath"></param>
         /// <param name="useGPU">ToDo: #30 - Add support to use the GPU for video conversion</param>
         internal void ConvertToScale(string filePath, int scale, string outputPath, bool useGPU)
-		{
-			string crop = GetCropFromFile(filePath);
+        {
+            string crop = GetCropFromFile(filePath);
 
             var command = FfCmds.FfmpegConvertCommand(filePath, crop, scale, outputPath);
 
-			_ = CmdHelper.RunCommandAndGetStdoutAsString(FfCmds.Ffmpeg, command);
-		}
+            _ = CmdHelper.RunCommandAndGetStdoutAsString(FfCmds.Ffmpeg, command);
+        }
 
-		/// <summary>
-		/// Analyse a single frame file using the given methods
-		/// Returns a FrameAnalysisResult object with the results for each method
-		/// </summary>
-		/// <param name="imageBytes"></param>
-		/// <param name="BucketAmount"></param>
-		/// <param name="methods"></param>
-		/// <returns></returns>
-		internal static FrameAnalysisResult GetColoursFromByteArrayUsingMethods(byte[] imageBytes, int BucketAmount, List<AnalysisMethod> methods)
-		{
+        /// <summary>
+        /// Analyse a single frame file using the given methods
+        /// Returns a FrameAnalysisResult object with the results for each method
+        /// </summary>
+        /// <param name="imageBytes"></param>
+        /// <param name="BucketAmount"></param>
+        /// <param name="methods"></param>
+        /// <returns></returns>
+        internal static FrameAnalysisResult GetColoursFromByteArrayUsingMethods(byte[] imageBytes, int BucketAmount, List<AnalysisMethod> methods)
+        {
             // Variables needed
             var analysisResult = new FrameAnalysisResult();
             var img = Image.Load<Argb32>(imageBytes);
 
             // Avg
             int r, g, b, total;
-			r = g = b = total = 0;
-			// Most frequent
-			var FrequencyColourDictionary = new Dictionary<Color, int>();
-			//Bucket
-			//List<Color> BucketColours = new List<Color>();
-			//List<Color>[,,] buckets = new List<Color>[BucketAmount, BucketAmount, BucketAmount];
+            r = g = b = total = 0;
+            // Most frequent
+            var FrequencyColourDictionary = new Dictionary<Color, int>();
+            //Bucket
+            //List<Color> BucketColours = new List<Color>();
+            //List<Color>[,,] buckets = new List<Color>[BucketAmount, BucketAmount, BucketAmount];
 
-			// Analyse frame for avg colour and add colours to buckets/frequent dictionary
-			for (int x = 0; x < img.Width; x++)
-			{
-				for (int y = 0; y < img.Height; y++)
-				{
-					Color c = img[x, y];
+            // Analyse frame for avg colour and add colours to buckets/frequent dictionary
+            for (int x = 0; x < img.Width; x++)
+            {
+                for (int y = 0; y < img.Height; y++)
+                {
+                    Color c = img[x, y];
 
-					// Avg
-					if (methods.Contains(AnalysisMethod.FrameAvg))
-					{
-						r += c.ToPixel<Argb32>().R;
-						g += c.ToPixel<Argb32>().G;
-						b += c.ToPixel<Argb32>().B;
-						total++;
-					}
+                    // Avg
+                    if (methods.Contains(AnalysisMethod.FrameAvg))
+                    {
+                        r += c.ToPixel<Argb32>().R;
+                        g += c.ToPixel<Argb32>().G;
+                        b += c.ToPixel<Argb32>().B;
+                        total++;
+                    }
 
-					// Most frequent
-					if (methods.Contains(AnalysisMethod.FrameMostFrequent))
-					{
-						if (FrequencyColourDictionary.ContainsKey(c))
-							FrequencyColourDictionary[c] = FrequencyColourDictionary[c]++;
-						else
-							FrequencyColourDictionary.Add(c, 1);
-					}
+                    // Most frequent
+                    if (methods.Contains(AnalysisMethod.FrameMostFrequent))
+                    {
+                        if (FrequencyColourDictionary.ContainsKey(c))
+                            FrequencyColourDictionary[c] = FrequencyColourDictionary[c]++;
+                        else
+                            FrequencyColourDictionary.Add(c, 1);
+                    }
 
-					// Bucket
-					//if (methods.Contains(AnalysisMethod.BucketAvgMinMax) 
-					//	|| methods.Contains(AnalysisMethod.BucketAvgTotal)
-					//	|| methods.Contains(AnalysisMethod.BucketMedian))
-					//	BucketColours.Add(c);
-				}
-			}
+                    // Bucket
+                    //if (methods.Contains(AnalysisMethod.BucketAvgMinMax) 
+                    //	|| methods.Contains(AnalysisMethod.BucketAvgTotal)
+                    //	|| methods.Contains(AnalysisMethod.BucketMedian))
+                    //	BucketColours.Add(c);
+                }
+            }
 
-			// Avg
-			if (methods.Contains(AnalysisMethod.FrameAvg))
-			{
-				r /= total;
-				g /= total;
-				b /= total;
-				Color AverageColour = Color.FromRgb((byte)r, (byte)g, (byte)b);
-				analysisResult.FrameAvgResult = AverageColour;
-			}
+            // Avg
+            if (methods.Contains(AnalysisMethod.FrameAvg))
+            {
+                r /= total;
+                g /= total;
+                b /= total;
+                Color AverageColour = Color.FromRgb((byte)r, (byte)g, (byte)b);
+                analysisResult.FrameAvgResult = AverageColour;
+            }
 
-			// Most frequent
-			if (methods.Contains(AnalysisMethod.FrameMostFrequent))
-			{
-				Color MostFrequentColor = FrequencyColourDictionary.Aggregate((l, r) => l.Value > r.Value ? l : r).Key;
-				analysisResult.FrameMostFrequentResult = MostFrequentColor;
-			}
+            // Most frequent
+            if (methods.Contains(AnalysisMethod.FrameMostFrequent))
+            {
+                Color MostFrequentColor = FrequencyColourDictionary.Aggregate((l, r) => l.Value > r.Value ? l : r).Key;
+                analysisResult.FrameMostFrequentResult = MostFrequentColor;
+            }
 
-			// Bucket
-			//if (methods.Contains(AnalysisMethod.BucketAvgMinMax)
-			//	|| methods.Contains(AnalysisMethod.BucketAvgTotal)
-			//	|| methods.Contains(AnalysisMethod.BucketMedian))
-			//{
-			//	foreach (Color c in BucketColours)
-			//	{
-			//		var pxl = c.ToPixel<Argb32>();
-			//		var red = (int)Math.Floor(pxl.R * BucketAmount / Math.Pow(2, 8));
-			//		var grn = (int)Math.Floor(pxl.G * BucketAmount / Math.Pow(2, 8));
-			//		var blu = (int)Math.Floor(pxl.B * BucketAmount / Math.Pow(2, 8));
+            // Bucket
+            //if (methods.Contains(AnalysisMethod.BucketAvgMinMax)
+            //	|| methods.Contains(AnalysisMethod.BucketAvgTotal)
+            //	|| methods.Contains(AnalysisMethod.BucketMedian))
+            //{
+            //	foreach (Color c in BucketColours)
+            //	{
+            //		var pxl = c.ToPixel<Argb32>();
+            //		var red = (int)Math.Floor(pxl.R * BucketAmount / Math.Pow(2, 8));
+            //		var grn = (int)Math.Floor(pxl.G * BucketAmount / Math.Pow(2, 8));
+            //		var blu = (int)Math.Floor(pxl.B * BucketAmount / Math.Pow(2, 8));
 
-			//		if (buckets[red, grn, blu] == null)
-			//			buckets[red, grn, blu] = new List<Color>();
-			//		buckets[red, grn, blu].Add(c);
+            //		if (buckets[red, grn, blu] == null)
+            //			buckets[red, grn, blu] = new List<Color>();
+            //		buckets[red, grn, blu].Add(c);
 
-			//	}
-			//	List<Color> fullestbucket = FindFullestBucket(buckets);
+            //	}
+            //	List<Color> fullestbucket = FindFullestBucket(buckets);
 
-			//	if (methods.Contains(AnalysisMethod.BucketAvgMinMax))
-			//		analysisResult.BucketAvgMinMaxResult = GetAvgMinMaxFromBucket(fullestbucket);
+            //	if (methods.Contains(AnalysisMethod.BucketAvgMinMax))
+            //		analysisResult.BucketAvgMinMaxResult = GetAvgMinMaxFromBucket(fullestbucket);
 
-			//	if (methods.Contains(AnalysisMethod.BucketAvgTotal))
-			//		analysisResult.BucketAvgTotalResult = GetAvgMinMaxFromBucket(fullestbucket);
-			//}
+            //	if (methods.Contains(AnalysisMethod.BucketAvgTotal))
+            //		analysisResult.BucketAvgTotalResult = GetAvgMinMaxFromBucket(fullestbucket);
+            //}
 
             return analysisResult;
-		}
+        }
 
-		/// <summary>
-		/// Creates an image from the given List of colours. The image will be 1 pixel high and the same width as the List.
-		/// </summary>
-		/// <param name="colours"></param>
-		/// <returns></returns>
-		internal static Image CreateBarcodeImageFromColours(Color[] colours)
-		{
-			var img = new Image<Argb32>(colours.Length, 1);
-			for (int x = 0; x < img.Width; x++)
-				img[x, 0] = colours[x];
+        /// <summary>
+        /// Creates an image from the given List of colours. The image will be 1 pixel high and the same width as the List.
+        /// </summary>
+        /// <param name="colours"></param>
+        /// <returns></returns>
+        internal static Image CreateBarcodeImageFromColours(Color[] colours)
+        {
+            var img = new Image<Argb32>(colours.Length, 1);
+            for (int x = 0; x < img.Width; x++)
+                img[x, 0] = colours[x];
 
-			return img;
-		}
+            return img;
+        }
 
         /// <summary>
         /// Gets the FPS of a video file using ffprobe
@@ -154,22 +154,22 @@ namespace MovieColour.Helper
             var output = CmdHelper.RunCommandAndGetStdoutAsString(FfCmds.Ffprobe, FfCmds.FfprobeGetFpsCommand(fullFilePath));
 
             // This returns something like:
-			// stream.0.avg_frame_rate="24000/1001"
+            // stream.0.avg_frame_rate="24000/1001"
             // From this we need a RegEx, that extracts the numbers and divides them
             var match = RegexHelper.FramerateRegex().Match(output);
             var numbers = match.Value.Split('/');
-			var fps = double.Parse(numbers[0]) / double.Parse(numbers[1]);
-			Log.Logger.Information(Strings.Fps0, fps);
+            var fps = double.Parse(numbers[0]) / double.Parse(numbers[1]);
+            Log.Logger.Information(Strings.Fps0, fps);
             return fps;
         }
 
-		/// <summary>
-		/// Gets the first frame of a video file as a byte array
-		/// </summary>
-		/// <param name="fullFilePath"></param>
-		/// <returns></returns>
-		internal static byte[] GetSingleFrameAsByteArray(string fullFilePath)
-		{
+        /// <summary>
+        /// Gets the first frame of a video file as a byte array
+        /// </summary>
+        /// <param name="fullFilePath"></param>
+        /// <returns></returns>
+        internal static byte[] GetSingleFrameAsByteArray(string fullFilePath)
+        {
             return CmdHelper.RunCommandAndGetStdoutAsByteArray(FfCmds.Ffmpeg, FfCmds.FfmpegGetSingleFrameCommand(fullFilePath));
         }
 
@@ -182,133 +182,159 @@ namespace MovieColour.Helper
         /// <param name="chunkSize">This represents the size of a single frame and is used to split the FFmpeg output</param>
         /// <returns></returns>
         internal static byte[][] GetXFrames(string fullFilePath, double offsetInSeconds, int x, int chunkSize)
-		{
-			var stdout = CmdHelper.RunCommandAndGetStdoutAsByteArray(FfCmds.Ffmpeg, FfCmds.FfmpegGetXFramesCommand(fullFilePath, offsetInSeconds, x));
-			return CmdHelper.SplitStdoutByChunk(stdout, chunkSize);
+        {
+            var stdout = CmdHelper.RunCommandAndGetStdoutAsByteArray(FfCmds.Ffmpeg, FfCmds.FfmpegGetXFramesCommand(fullFilePath, offsetInSeconds, x));
+            return CmdHelper.SplitStdoutByChunk(stdout, chunkSize);
         }
 
         #endregion
 
         #region Private methods
 
-		/// <summary>
-		/// Get the crop from the file using FFmpeg
-		/// </summary>
-		/// <param name="fullFilePath"></param>
-		/// <returns></returns>
+        /// <summary>
+        /// Get the crop from the file using FFmpeg
+        /// </summary>
+        /// <param name="fullFilePath"></param>
+        /// <returns></returns>
         private string GetCropFromFile(string fullFilePath)
-		{
-			Log.Logger.Information(Strings.DetectingCrop);
+        {
+            Log.Logger.Information(Strings.DetectingCrop);
 
-			var crop = String.Empty;
+            var crop = string.Empty;
 
-			var command = FfCmds.FfmpegCropCommand(fullFilePath);
-			var result = CmdHelper.RunCommandAndGetStdoutAsString(FfCmds.Ffmpeg, command, true);
+            var duration = GetDurationFromFile(fullFilePath);
+
+            var command = FfCmds.FfmpegCropCommand(fullFilePath, duration / 4);
+            var result = CmdHelper.RunCommandAndGetStdoutAsString(FfCmds.Ffmpeg, command, true);
 
             var matches = RegexHelper.CropRegex().Matches(result);
 
-			if (matches != null)
-			{
-				if (matches.Count > 1)
-					crop = matches[^1].Value;
-				else
-					crop = matches[0].Value;
-			}
+            switch (matches.Count)
+            {
+                case 0:
+                    throw new Exception(string.Format(Strings.ErrorNoCropFound, result)); // ToDo #12
+                case > 1:
+                    crop = matches[^1].Value;
+                    break;
+                default:
+                    crop = matches[0].Value;
+                    break;
+            }
 
-			Log.Logger.Information(string.Format(Strings.CropFound, crop));
+            Log.Logger.Information(string.Format(Strings.CropFound, crop));
 
-			return crop[5..]; // we don't need the "crop=" part
+            return crop[5..]; // we don't need the "crop=" part
         }
 
-		/// <summary>
-		/// Find the fullest bucket in the given array of buckets
-		/// </summary>
-		/// <param name="buckets"></param>
-		/// <returns></returns>
-		private List<Color> FindFullestBucket(List<Color>[,,] buckets)
-		{
-			var fullestBucket = new List<Color>();
-			int max = 0;
+        /// <summary>
+        /// Gets the total duration of the given movie file in seconds using ffprobe
+        /// </summary>
+        /// <param name="fullFilePath">The complete, non-relative, file path</param>
+        /// <returns>The total duration in seconds</returns>
+        /// <exception cref="Exception"></exception>
+        private int GetDurationFromFile(string fullFilePath)
+        {
+            var command = FfCmds.FfprobeGetDurationCommand(fullFilePath);
+            var result = CmdHelper.RunCommandAndGetStdoutAsString(FfCmds.Ffprobe, command);
 
-			foreach (List<Color> bucket in buckets)
-			{
-				if (bucket != null && bucket.Count > max)
-				{
-					fullestBucket = bucket;
-					max = bucket.Count;
-				}
-			}
+            var indexPeriod = result.IndexOf('.');
+            var videoDuration = result[..indexPeriod]; // remove the milliseconds
 
-			if (fullestBucket.Count == 0)
-				fullestBucket = buckets[0, 0, 0];
+            if (!int.TryParse(videoDuration, out int duration))
+                throw new Exception(string.Format(Strings.ErrorDurationNotIntGot, videoDuration)); // ToDo #12
 
-			return fullestBucket;
-		}
+            return duration;
+        }
 
-		/// <summary>
-		/// Get the average colour from the given bucket by calculating the average of the min and max colours
-		/// </summary>
-		/// <param name="bucket"></param>
-		/// <returns></returns>
-		private Color GetAvgMinMaxFromBucket(List<Color> bucket)
-		{
-			//Used for tally
-			int r = 0;
-			int g = 0;
-			int b = 0;
+        /// <summary>
+        /// Find the fullest bucket in the given array of buckets
+        /// </summary>
+        /// <param name="buckets"></param>
+        /// <returns></returns>
+        private List<Color> FindFullestBucket(List<Color>[,,] buckets)
+        {
+            var fullestBucket = new List<Color>();
+            int max = 0;
 
-			int total = 0;
+            foreach (List<Color> bucket in buckets)
+            {
+                if (bucket != null && bucket.Count > max)
+                {
+                    fullestBucket = bucket;
+                    max = bucket.Count;
+                }
+            }
 
-			//bucket.Sort();
+            if (fullestBucket.Count == 0)
+                fullestBucket = buckets[0, 0, 0];
 
-			r += bucket[0].ToPixel<Argb32>().R;
-			r += bucket[bucket.Count - 1].ToPixel<Argb32>().R;
-			g += bucket[0].ToPixel<Argb32>().G;
-			g += bucket[bucket.Count - 1].ToPixel<Argb32>().G;
-			b += bucket[0].ToPixel<Argb32>().B;
-			b += bucket[bucket.Count - 1].ToPixel<Argb32>().B;
+            return fullestBucket;
+        }
 
-			total = 2;
+        /// <summary>
+        /// Get the average colour from the given bucket by calculating the average of the min and max colours
+        /// </summary>
+        /// <param name="bucket"></param>
+        /// <returns></returns>
+        private Color GetAvgMinMaxFromBucket(List<Color> bucket)
+        {
+            //Used for tally
+            int r = 0;
+            int g = 0;
+            int b = 0;
 
-			r /= total;
-			g /= total;
-			b /= total;
+            int total = 0;
 
-			return Color.FromRgb((byte)r, (byte)g, (byte)b);
-		}
+            //bucket.Sort();
 
-		/// <summary>
-		/// Get the average colour from the given bucket by calculating the average of all colours
-		/// </summary>
-		/// <param name="bucket"></param>
-		/// <returns></returns>
-		private Color GetAvgTotalFromBucket(List<Color> bucket)
-		{
-			//Used for tally
-			int r = 0;
-			int g = 0;
-			int b = 0;
+            r += bucket[0].ToPixel<Argb32>().R;
+            r += bucket[bucket.Count - 1].ToPixel<Argb32>().R;
+            g += bucket[0].ToPixel<Argb32>().G;
+            g += bucket[bucket.Count - 1].ToPixel<Argb32>().G;
+            b += bucket[0].ToPixel<Argb32>().B;
+            b += bucket[bucket.Count - 1].ToPixel<Argb32>().B;
 
-			int total = 0;
+            total = 2;
 
-			for (int x = 0; x < bucket.Count; x++)
-			{
-				var pixel = bucket[x].ToPixel<Argb32>();
+            r /= total;
+            g /= total;
+            b /= total;
 
-				r += pixel.R;
-				g += pixel.G;
-				b += pixel.B;
+            return Color.FromRgb((byte)r, (byte)g, (byte)b);
+        }
 
-				total++;
-			}
+        /// <summary>
+        /// Get the average colour from the given bucket by calculating the average of all colours
+        /// </summary>
+        /// <param name="bucket"></param>
+        /// <returns></returns>
+        private Color GetAvgTotalFromBucket(List<Color> bucket)
+        {
+            //Used for tally
+            int r = 0;
+            int g = 0;
+            int b = 0;
 
-			//Calculate average
-			r /= total;
-			g /= total;
-			b /= total;
+            int total = 0;
 
-			return Color.FromRgb((byte)r, (byte)g, (byte)b);
-		}
+            for (int x = 0; x < bucket.Count; x++)
+            {
+                var pixel = bucket[x].ToPixel<Argb32>();
+
+                r += pixel.R;
+                g += pixel.G;
+                b += pixel.B;
+
+                total++;
+            }
+
+            //Calculate average
+            r /= total;
+            g /= total;
+            b /= total;
+
+            return Color.FromRgb((byte)r, (byte)g, (byte)b);
+        }
 
         #endregion
 
