@@ -140,24 +140,26 @@
                                     <RowDefinition Height="1*" />
                                     <RowDefinition Height="1*" />
                                     <RowDefinition Height="1*" />
+                                    <RowDefinition Height="1*" />
                                 </Grid.RowDefinitions>
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="1*" />
                                     <ColumnDefinition Width="5*" />
                                     <ColumnDefinition Width="1*" />
                                 </Grid.ColumnDefinitions>
+                                
+                                <Label Grid.Row="1" Grid.Column="0" x:Name="LblProgressConversion" Content="{x:Static local:Strings.Conversion}" />
+                                <Label Grid.Row="2" Grid.Column="0" x:Name="LblProgressAnalysisBatch" Content="{x:Static local:Strings.Batch}" />
+                                <Label Grid.Row="3" Grid.Column="0" x:Name="LblProgressAnalysisTotal" Content="{x:Static local:Strings.Analysis}" />
 
-                                <Label Grid.Row="0" Grid.Column="0" x:Name="LblProgressConversion" Content="{x:Static local:Strings.Conversion}" />
-                                <Label Grid.Row="1" Grid.Column="0" x:Name="LblProgressExtraction" Content="{x:Static local:Strings.Extraction}" />
-                                <Label Grid.Row="2" Grid.Column="0" x:Name="LblProgressAnalysis" Content="{x:Static local:Strings.Analysis}" />
+                                <ProgressBar Grid.Row="1" Grid.Column="1" x:Name="ProgressBarConversion" Minimum="0" Maximum="100" Margin="4" />
+                                <ProgressBar Grid.Row="2" Grid.Column="1" x:Name="ProgressBarAnalysisBatch" Minimum="0" Maximum="100" Margin="4" />
+                                <ProgressBar Grid.Row="3" Grid.Column="1" x:Name="ProgressBarAnalysisTotal" Minimum="0" Maximum="100" Margin="4" />
 
-                                <ProgressBar Grid.Row="0" Grid.Column="1" x:Name="ProgressBarConversion" Minimum="0" Maximum="100" Margin="4" />
-                                <ProgressBar Grid.Row="1" Grid.Column="1" x:Name="ProgressBarExtraction" Minimum="0" Maximum="100" Margin="4" />
-                                <ProgressBar Grid.Row="2" Grid.Column="1" x:Name="ProgressBarAnalysis" Minimum="0" Maximum="100" Margin="4" />
-
-                                <Label Grid.Row="0" Grid.Column="3" x:Name="LblProgressConversionTime" />
-                                <Label Grid.Row="1" Grid.Column="3" x:Name="LblProgressExtractionTime" />
-                                <Label Grid.Row="2" Grid.Column="3" x:Name="LblProgressAnalysisTime" />
+                                <Label Grid.Row="0" Grid.Column="2" x:Name="LblEta" Content="{x:Static local:Strings.EstRemaining}" />
+                                <Label Grid.Row="1" Grid.Column="2" x:Name="LblProgressConversionEta" />
+                                <Label Grid.Row="2" Grid.Column="2" x:Name="LblProgressAnalysisBatchEta" />
+                                <Label Grid.Row="3" Grid.Column="2" x:Name="LblProgressAnalysisTotalEta" />
 
                             </Grid>
 

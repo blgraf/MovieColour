@@ -184,7 +184,7 @@
     <value>Delete byproducts</value>
   </data>
   <data name="IncreaseBrightness" xml:space="preserve">
-    <value>Increase brightness (in %</value>
+    <value>Increase brightness in %</value>
   </data>
   <data name="ResetDefaultBtn" xml:space="preserve">
     <value>Reset to Default values</value>
@@ -271,7 +271,7 @@
     <value>The operation was cancelled</value>
   </data>
   <data name="EstRemaining" xml:space="preserve">
-    <value>Est. remaining: {0} min</value>
+    <value>Est. remaining</value>
   </data>
   <data name="CropFound" xml:space="preserve">
     <value>Crop found: {0}</value>
@@ -323,5 +323,17 @@
   </data>
   <data name="ErrorNoCropFound" xml:space="preserve">
     <value>Could not find crop from file with result {0}</value>
+  </data>
+  <data name="TotalAmountOfBatches" xml:space="preserve">
+    <value>Total amount of batches: {0}</value>
+  </data>
+  <data name="Batch" xml:space="preserve">
+    <value>Batch</value>
+  </data>
+  <data name="XMin" xml:space="preserve">
+    <value>{0} min</value>
+  </data>
+  <data name="XSec" xml:space="preserve">
+    <value>{0} sec</value>
   </data>
 </root>

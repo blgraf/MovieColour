@@ -4,6 +4,8 @@ using SixLabors.ImageSharp.PixelFormats;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
 using static MovieColour.Helper.Enums;
 
 namespace MovieColour.Helper
@@ -19,13 +21,15 @@ namespace MovieColour.Helper
         /// <param name="scale">The full int of the height of the frame, e.g. 360 for 360p</param>
         /// <param name="outputPath"></param>
         /// <param name="useGPU">ToDo: #30 - Add support to use the GPU for video conversion</param>
-        internal void ConvertToScale(string filePath, int scale, string outputPath, bool useGPU)
+        /// <param name="progress"></param>
+        /// <param name="ct"></param>
+        internal async Task ConvertToScale(string filePath, int scale, string outputPath, bool useGPU, IProgress<int>? progress = null, CancellationToken ct = default)
         {
-            string crop = GetCropFromFile(filePath);
-
+            var crop = GetCropFromFile(filePath);
+            var duration = GetDurationInSFromFile(filePath);
             var command = FfCmds.FfmpegConvertCommand(filePath, crop, scale, outputPath);
 
-            _ = CmdHelper.RunCommandAndGetStdoutAsString(FfCmds.Ffmpeg, command);
+            await CmdHelper.RunFfmpegWithTimeProgressAsync(FfCmds.Ffmpeg, command, duration, progress, ct);
         }
 
         /// <summary>
@@ -33,10 +37,10 @@ namespace MovieColour.Helper
         /// Returns a FrameAnalysisResult object with the results for each method
         /// </summary>
         /// <param name="imageBytes"></param>
-        /// <param name="BucketAmount"></param>
+        /// <param name="bucketAmount"></param>
         /// <param name="methods"></param>
         /// <returns></returns>
-        internal static FrameAnalysisResult GetColoursFromByteArrayUsingMethods(byte[] imageBytes, int BucketAmount, List<AnalysisMethod> methods)
+        internal static FrameAnalysisResult GetColoursFromByteArrayUsingMethods(byte[] imageBytes, int bucketAmount, List<AnalysisMethod> methods)
         {
             // Variables needed
             var analysisResult = new FrameAnalysisResult();
@@ -202,7 +206,7 @@ namespace MovieColour.Helper
 
             var crop = string.Empty;
 
-            var duration = GetDurationFromFile(fullFilePath);
+            var duration = GetDurationInSFromFile(fullFilePath);
 
             var command = FfCmds.FfmpegCropCommand(fullFilePath, duration / 4);
             var result = CmdHelper.RunCommandAndGetStdoutAsString(FfCmds.Ffmpeg, command, true);
@@ -232,7 +236,7 @@ namespace MovieColour.Helper
         /// <param name="fullFilePath">The complete, non-relative, file path</param>
         /// <returns>The total duration in seconds</returns>
         /// <exception cref="Exception"></exception>
-        private int GetDurationFromFile(string fullFilePath)
+        internal static int GetDurationInSFromFile(string fullFilePath)
         {
             var command = FfCmds.FfprobeGetDurationCommand(fullFilePath);
             var result = CmdHelper.RunCommandAndGetStdoutAsString(FfCmds.Ffprobe, command);

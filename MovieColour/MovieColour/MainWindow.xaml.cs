@@ -91,7 +91,7 @@ namespace MovieColour
             Log.Logger = new LoggerConfiguration()
                 .WriteTo.File(@".\log.txt",
                     outputTemplate: "{Timestamp:[yyyy-MM-dd HH:mm:ss]} [{Level:u3}] | {Message:lj}{NewLine}{Exception}",
-                    encoding: System.Text.Encoding.UTF8)
+                    encoding: Encoding.UTF8)
                 .WriteTo.RichTextBox(RchTxtBxLog)
                 .MinimumLevel.Verbose()
                 .CreateLogger();
@@ -125,6 +125,8 @@ namespace MovieColour
                     this.TxtBxInputFile.Text = files[0].Name;
                 else if (files.Count > 1)
                     this.TxtBxInputFile.Text = $"[{Strings.MultipleFilesSelected}]";
+                else
+                    return;
             }
 
             Log.Logger.Information(Strings.SelectedFiles);
@@ -153,12 +155,12 @@ namespace MovieColour
                 foreach (FileInfo fileInfo in files)
                 {
                     Log.Logger.Information(Strings.ProcessingFile, fileInfo.Name);
-                    this.ProgressBarAnalysis.Value = 0;
+                    this.ProgressBarAnalysisBatch.Value = 0;
                     this.ProgressBarConversion.Value = 0;
-                    this.ProgressBarExtraction.Value = 0;
-                    this.LblProgressConversionTime.Content = new TimeSpan();
-                    this.LblProgressExtractionTime.Content = new TimeSpan();
-                    this.LblProgressAnalysisTime.Content = new TimeSpan();
+                    this.ProgressBarAnalysisTotal.Value = 0;
+                    this.LblProgressConversionEta.Content = new TimeSpan();
+                    this.LblProgressAnalysisTotalEta.Content = new TimeSpan();
+                    this.LblProgressAnalysisBatchEta.Content = new TimeSpan();
 
                     if (!int.TryParse(TxtBxWorkingScale.Text, out int scale))
                         throw new Exception("non-int scale"); // ToDo #12
@@ -175,45 +177,60 @@ namespace MovieColour
 
                     // Step 0. Get fps
                     // Step 1. Get 1st frame to know byte[] size
-                    // Step 2. Get frames and splite them into byte[]s. Calculated based on Step 1 to be within byte[] int index limits
+                    // Step 2. Get frames and split them into byte[]s. Calculated based on Step 1 to be within byte[] int index limits
                     // Step 3. Analyse byte[]s
                     // Step 4. Repeat 2-3 until all frames are analysed
                     // Step 5. Combine results
                     // Step 6. Create images
 
+                    // Step 0
                     var fps = ImageHelper.GetFps(fi.FullName);
+                    var duration = ImageHelper.GetDurationInSFromFile(fi.FullName);
+                    var frameCount = fps * duration;
+                    // Step 1
                     var singleFrameSize = ImageHelper.GetSingleFrameAsByteArray(fi.FullName).Length;
-                    int framesPerBatch = int.MaxValue / singleFrameSize;
+                    var framesPerBatch = int.MaxValue / singleFrameSize;
+                    var batchCount = Math.Ceiling(frameCount / framesPerBatch);
 
                     Log.Logger.Information(Strings.BatchSizeFrames, framesPerBatch);
+                    Log.Logger.Information(Strings.TotalAmountOfBatches, batchCount);
 
+                    var totalTimer = new Stopwatch();
+                    
+                    IProgress<int> progress = GetProgressForTotalAnalysis(totalTimer);
+                    
                     var allResults = new List<AnalysisResult>();
 
-                    int counter = 0;
-                    double offset = 0d;
+                    var counter = 0;
+                    var offset = 0d;
                     var hasMoreFrames = true;
-                    var sw = new Stopwatch();
-                    var sw2 = new Stopwatch();
-                    sw2.Start();
+                    var batchTimer = new Stopwatch();
+                    totalTimer.Start();
                     do
                     {
-                        sw.Start();
+                        batchTimer.Start();
                         offset = counter * framesPerBatch / fps;
                         counter++;
 
+                        // Step 2
                         var frames = ImageHelper.GetXFrames(fi.FullName, offset, framesPerBatch, singleFrameSize);
                         
                         if (frames.Length < framesPerBatch)
                             hasMoreFrames = false;
 
+                        // Step 3
                         var intermediateResult = await AnalyseFrames(frames, methods);
                         allResults.Add(intermediateResult);
-                        var batchSec = Math.Truncate(sw.Elapsed.TotalSeconds * 100) / 100;
+                        var batchSec = Math.Truncate(batchTimer.Elapsed.TotalSeconds * 100) / 100;
                         Log.Logger.Information(Strings.BatchXTookYs, counter, batchSec);
-                        sw.Restart();
+
+                        progress.Report((int)Math.Ceiling(counter * 100f / batchCount));
+                        batchTimer.Restart();
                     }
+                    // Step 4
                     while (hasMoreFrames);
 
+                    // Step 5
                     var finalResult = new AnalysisResult
                     {
                         //BucketAvgMinMaxResult = allResults.SelectMany(x => x.BucketAvgMinMaxResult).ToArray(),
@@ -223,12 +240,15 @@ namespace MovieColour
                         //FrameMedianResult = allResults.SelectMany(x => x.FrameMedianResult).ToArray(),
                         FrameMostFrequentResult = allResults.SelectMany(x => x.FrameMostFrequentResult).ToArray()
                     };
+                    
+                    totalTimer.Stop();
 
-                    var (min, sec) = GetMinSecFromTimeSpan(sw2.Elapsed);
-                    var avgSec = Math.Truncate((sw2.Elapsed.TotalSeconds / counter) * 100) / 100;
+                    var (min, sec) = GetMinSecFromTimeSpan(totalTimer.Elapsed);
+                    var avgSec = Math.Truncate(totalTimer.Elapsed.TotalSeconds / batchCount * 100) / 100;
                     Log.Logger.Information(Strings.AllBatchProcessTime, min, sec);
                     Log.Logger.Information(Strings.AvgTimePerBatch,  avgSec);
 
+                    // Step 6
                     CreateImages(fi, finalResult);
 
                     //Deletion of temporary files
@@ -293,12 +313,12 @@ namespace MovieColour
         private void SetDefaultValues()
         {
             this.ProgressBarConversion.Value = 0;
-            this.ProgressBarExtraction.Value = 0;
-            this.ProgressBarAnalysis.Value = 0;
+            this.ProgressBarAnalysisTotal.Value = 0;
+            this.ProgressBarAnalysisBatch.Value = 0;
 
-            this.LblProgressConversionTime.Content = new TimeSpan();
-            this.LblProgressExtractionTime.Content = new TimeSpan();
-            this.LblProgressAnalysisTime.Content = new TimeSpan();
+            this.LblProgressConversionEta.Content = new TimeSpan();
+            this.LblProgressAnalysisTotalEta.Content = new TimeSpan();
+            this.LblProgressAnalysisBatchEta.Content = new TimeSpan();
 
             this.TxtBxInputFile.IsReadOnly = true;
             this.TxtBxFrameCount.Text = "1";
@@ -323,6 +343,7 @@ namespace MovieColour
             this.TxtBxBucketcount.Text = "3";
             this.ChkBoxEnableConversion.IsChecked = true;
             this.ChkBoxGPU.IsChecked = false;
+            this.ChkBoxGPU.IsEnabled = false;
             this.ChkBoxDeleteByProducts.IsChecked = true;
             this.TxtBxIncreaseBrightness.Text = "0";
         }
@@ -337,32 +358,17 @@ namespace MovieColour
         {
             Log.Logger.Information(Strings.ConversionStarted);
 
-            Progress<int> progress;
             var watch = new Stopwatch();
             var movieColourHelper = new MovieColourHelper();
 
-            progress = new Progress<int>(percent =>
-            {
-                ProgressBarConversion.Value = percent;
-                var ts = new TimeSpan(watch.ElapsedTicks);
-                if (percent > 0)
-                {
-                    var eta = (int)(ts.TotalSeconds * 10 / percent / 6);
-                    LblProgressConversionTime.Content = string.Format(Strings.EstRemaining, eta);
-                }
-            }); // ToDo #4
-
-            movieColourHelper.Progress = progress;
+            movieColourHelper.Progress = GetProgressForConversion(watch);
             movieColourHelper.InputFile = inputfile;
 
             watch.Start();
 
-            movieColourHelper.ConvertMovieAsync(scale, tmpfile, (bool)ChkBoxGPU.IsChecked);
+            await movieColourHelper.ConvertMovieAsync(scale, tmpfile, (bool)ChkBoxGPU.IsChecked, cancellationTokenSource.Token);
 
             watch.Stop();
-
-            var ts = new TimeSpan(watch.ElapsedTicks);
-            LblProgressConversionTime.Content = $"{Strings.Elapsed}: {ts.Hours:00}:{ts.Minutes:00}:{ts.Seconds:00}";
             watch.Reset();
 
             Log.Logger.Information(Strings.ConversionFinished);
@@ -377,39 +383,134 @@ namespace MovieColour
         private async Task<AnalysisResult> AnalyseFrames(byte[][] files, List<AnalysisMethod> methods)
         {
             Log.Logger.Information(Strings.AnalysisStarted);
-            Progress<int> progress;
             var watch = new Stopwatch();
             var movieColourHelper = new MovieColourHelper();
 
-            progress = new Progress<int>(percent =>
-            {
-                ProgressBarAnalysis.Value = percent;
-                var ts = new TimeSpan(watch.ElapsedTicks);
-                if (percent > 0)
-                {
-                    var eta = (int)(ts.TotalSeconds * 10 / percent / 6);
-                    LblProgressAnalysisTime.Content = String.Format(Strings.EstRemaining, eta);
-                }
-            });
-
-            movieColourHelper.Progress = progress;
-
+            movieColourHelper.Progress = GetProgressForBatchAnalysis(watch);
+            
             watch.Start();
 
-            AnalysisResult ret;
+            var bucketCount = int.Parse(TxtBxBucketcount.Text);
 
-            int b = int.Parse(TxtBxBucketcount.Text);
-
-            ret = await movieColourHelper.AnalyseFramesUsingMethods(files, b, methods);
+            AnalysisResult ret = await movieColourHelper.AnalyseFramesUsingMethods(files, bucketCount, methods);
 
             watch.Stop();
-
-            var ts = new TimeSpan(watch.ElapsedTicks);
-            LblProgressAnalysisTime.Content = $"{Strings.Elapsed}: {ts.Hours:00}:{ts.Minutes:00}:{ts.Seconds:00}";
             watch.Reset();
 
             Log.Logger.Information(Strings.AnalysisFinished);
             return ret;
+        }
+
+        /// <summary>
+        /// Gets the Progress reporter for the conversion. Updates the corresponding progress bar & label. At 100%, shows total elapsed time.
+        /// </summary>
+        /// <param name="watch"></param>
+        /// <returns></returns>
+        private Progress<int> GetProgressForConversion(Stopwatch watch)
+        {
+            return new Progress<int>(percent =>
+            {
+                ProgressBarConversion.Value = percent;
+                
+                if (percent <= 0)
+                    return;
+                
+                // Show final elapsed time
+                if (percent >= 100)
+                {
+                    var ts = new TimeSpan(watch.ElapsedTicks);
+                    LblProgressConversionEta.Content = $"{Strings.Elapsed}: {ts.Hours:00}:{ts.Minutes:00}:{ts.Seconds:00}";
+                    return;
+                }
+
+                var estRemaining = GetEstRemainingSecondsForProgress(new TimeSpan(watch.ElapsedTicks), percent);
+                string etaLabel;
+                // if ETA is over one minute, show in minutes, else in seconds
+                if (estRemaining > 60)
+                    etaLabel = string.Format(Strings.XMin, (int)(estRemaining / 60));
+                else
+                    etaLabel = string.Format(Strings.XSec, (int)estRemaining);
+                LblProgressConversionEta.Content = etaLabel;
+                
+            });
+        }
+
+        /// <summary>
+        /// Gets the Progress reporter for the batch analysis. Updates the corresponding progress bar & label. At 100%, shows total elapsed time.
+        /// </summary>
+        /// <param name="watch"></param>
+        /// <returns></returns>
+        private Progress<int> GetProgressForBatchAnalysis(Stopwatch watch)
+        {
+            return new Progress<int>(percent =>
+            {
+                ProgressBarAnalysisBatch.Value = percent;
+
+                if (percent <= 0)
+                    return;
+
+                // Show final elapsed time
+                if (percent >= 100)
+                {
+                    var ts = new TimeSpan(watch.ElapsedTicks);
+                    LblProgressAnalysisBatchEta.Content = $"{Strings.Elapsed}: {ts.Hours:00}:{ts.Minutes:00}:{ts.Seconds:00}";
+                    return;
+                }
+                
+                // otherwise show ETA
+                var estRemaining = GetEstRemainingSecondsForProgress(new TimeSpan(watch.ElapsedTicks), percent);
+                LblProgressAnalysisBatchEta.Content = string.Format(Strings.XSec, (int)estRemaining);
+                
+            });
+        }
+
+        /// <summary>
+        /// Gets the Progress reporter for the total analysis. Updates the corresponding progress bar & label. At 100%, shows total elapsed time.
+        /// </summary>
+        /// <param name="watch"></param>
+        /// <returns></returns>
+        private Progress<int> GetProgressForTotalAnalysis(Stopwatch watch)
+        {
+            return new Progress<int>(percent =>
+            {
+                ProgressBarAnalysisTotal.Value = percent;
+
+                if (percent <= 0)
+                    return;
+
+                // Show final elapsed time
+                if (percent >= 100)
+                {
+                    var ts = new TimeSpan(watch.ElapsedTicks);
+                    LblProgressAnalysisTotalEta.Content = $"{Strings.Elapsed}: {ts.Hours:00}:{ts.Minutes:00}:{ts.Seconds:00}";
+                    return;
+                }
+                
+                // otherwise show ETA
+                var estRemaining = GetEstRemainingSecondsForProgress(new TimeSpan(watch.ElapsedTicks), percent);
+                string etaLabel;
+                // if ETA is over one minute, show in minutes, else in seconds
+                if (estRemaining > 60)
+                    etaLabel = string.Format(Strings.XMin, (int)(estRemaining / 60));
+                else
+                    etaLabel = string.Format(Strings.XSec, (int)estRemaining);
+                LblProgressAnalysisTotalEta.Content = etaLabel;
+                
+            });
+        }
+
+        /// <summary>
+        /// Calculates the estimated remaining time based on the elapsed TimeSpan and percent completed
+        /// </summary>
+        /// <param name="ts"></param>
+        /// <param name="percentCompleted"></param>
+        /// <returns></returns>
+        private static double GetEstRemainingSecondsForProgress(TimeSpan ts, double percentCompleted)
+        {
+            var estTotal = ts.TotalSeconds * 100.0 / percentCompleted; // TotalElapsed * 100/percent (turning xx% back into 0.xx)
+            var estRemaining = estTotal - ts.TotalSeconds; // TotalEstimated - TotalElapsed
+            
+            return estRemaining;
         }
 
         /// <summary>
@@ -456,6 +557,7 @@ namespace MovieColour
             filenameBuilder.Append(movieFile.DirectoryName);
             filenameBuilder.Append('\\');
             filenameBuilder.Append(movieFile.Name[..^4]);
+            filenameBuilder.Append("_");
             filenameBuilder.Append(int.Parse(TxtBxFrameCount.Text));
 
             var fullsizedNameBuilder = new StringBuilder(filenameBuilder.ToString());
@@ -517,16 +619,21 @@ namespace MovieColour
             return list;
         }
 
+        /// <summary>
+        /// Returns the given TimeSpan into a tuple of minutes & seconds
+        /// </summary>
+        /// <param name="ts"></param>
+        /// <returns></returns>
         private static (int min, int sec) GetMinSecFromTimeSpan(TimeSpan ts)
         {
             var totalSeconds = ts.TotalSeconds;
             var minutes = (int)(totalSeconds / 60);
-            int seconds = (int)(Math.Ceiling(totalSeconds) % 60);
+            var seconds = (int)(Math.Ceiling(totalSeconds) % 60);
             return (minutes, seconds);
         }
 
         /// <summary>
-        /// Checks if FFmpeg and FFprobe are available frmot the command line
+        /// Checks if FFmpeg and FFprobe are available from the command line
         /// Displays an error if not
         /// </summary>
         private void CheckFfmpegAvailability()

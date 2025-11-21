@@ -32,7 +32,7 @@
         /// <param name="outputFilePath"></param>
         /// <returns></returns>
         internal static string FfmpegConvertCommand(string fullFilePath, string crop, int scale, string outputFilePath) =>
-            $"-hide_banner -i \"{fullFilePath}\" -map 0:v:0 -vf crop={crop},scale=-2:{scale} -sws_flags sinc \"{outputFilePath}\"";
+            $"-hide_banner -i \"{fullFilePath}\" -map 0:v:0 -vf crop={crop},scale=-2:{scale} -sws_flags sinc -progress pipe:2 -nostats -v error \"{outputFilePath}\"";
 
         /// <summary>
         /// Get the command to get the first frame of a video file which will be output as a byte representation of a BMP file to stdout

@@ -1,7 +1,9 @@
 ﻿using SixLabors.ImageSharp;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using static MovieColour.Helper.Enums;
 
@@ -14,16 +16,17 @@ namespace MovieColour.Helper
 
         private static readonly ImageHelper imageHelper = new();
 
-		/// <summary>
-		/// Wrapper for ImageHelper.GetFramesFromMovie. Needed? ToDo
-		/// </summary>
-		/// <param name="workingScale"></param>
-		/// <param name="tmpPath"></param>
-		/// <param name="useGPU"></param>
-		/// <returns></returns>
-		internal void ConvertMovieAsync (int workingScale, string tmpPath, bool useGPU)
+        /// <summary>
+        /// Wrapper for ImageHelper.GetFramesFromMovie. Needed? ToDo
+        /// </summary>
+        /// <param name="workingScale"></param>
+        /// <param name="tmpPath"></param>
+        /// <param name="useGPU"></param>
+        /// <param name="ct"></param>
+        /// <returns></returns>
+        internal async Task ConvertMovieAsync (int workingScale, string tmpPath, bool useGPU, CancellationToken ct = default)
 		{
-			imageHelper.ConvertToScale(InputFile, workingScale, tmpPath, useGPU);
+			await imageHelper.ConvertToScale(InputFile, workingScale, tmpPath, useGPU, Progress, ct);
 		}
 
 		/// <summary>
@@ -33,24 +36,32 @@ namespace MovieColour.Helper
 		/// <param name="framesBytes"></param>
 		/// <param name="bucketCount"></param>
 		/// <param name="methods"></param>
+		/// <param name="ct"></param>
 		/// <returns></returns>
-		internal async Task<AnalysisResult> AnalyseFramesUsingMethods(byte[][] framesBytes, int bucketCount = 0, List<AnalysisMethod> methods = null)
+		internal async Task<AnalysisResult> AnalyseFramesUsingMethods(byte[][] framesBytes, int bucketCount = 0, List<AnalysisMethod> methods = null, CancellationToken ct = default)
 		{
 			var frameAnalysisResults = new FrameAnalysisResult[framesBytes.Length];
 
 			await Task.Run(() => {
 				var totalCount = framesBytes.Length;
-				var tmpCount = 0;
+				var done = 0;
+				var sw = Stopwatch.StartNew();
 
-				Parallel.For(0, framesBytes.Length, (i) =>
+				Parallel.For(0, totalCount, new ParallelOptions { CancellationToken = ct }, i =>
                 {
                     frameAnalysisResults[i] = ImageHelper.GetColoursFromByteArrayUsingMethods(framesBytes[i], bucketCount, methods);
-
-                    // report
-                    tmpCount++;
-					Progress.Report((int)Math.Ceiling(tmpCount * 100f / totalCount));
+                    
+                    // thread-safe increment
+                    var current = Interlocked.Increment(ref done);
+                    // throttle: ~2 updates/sec, and always report 100% at the end
+                    if (sw.ElapsedMilliseconds >= 500 || current == totalCount)
+                    {
+	                    // report
+	                    Progress?.Report((int)Math.Ceiling(current * 100f / totalCount));
+	                    sw.Restart();
+                    }
 				});
-			});
+			}, ct).ConfigureAwait(false);
 
             var analysisResult = new AnalysisResult
             {

@@ -3,6 +3,8 @@ using System;
 using System.Diagnostics;
 using System.IO;
 using System.Text;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace MovieColour.Helper
 {
@@ -64,11 +66,91 @@ namespace MovieColour.Helper
             Log.Logger.Verbose("Command executed successfully");
             return ms.ToArray();
         }
+        
+        internal static async Task RunFfmpegWithTimeProgressAsync(string fileName, string arguments, int totalSeconds, IProgress<int>? progress, CancellationToken cancellationToken = default)
+        {
+            var si = GetCustomFileProcessStartInfo(fileName, arguments);
+            using var p = new Process { StartInfo = si, EnableRaisingEvents = false };
+
+            p.Start();
+
+            // We only need stderr for progress, but keep stdout redirected for completeness.
+            var stderr = p.StandardError;
+            // ffmpeg writes "key=value" lines when -progress pipe:2 is used.
+            // scan for out_time or out_time_ms.
+            string? line;
+            while ((line = await stderr.ReadLineAsync()) != null)
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+
+                // out_time=HH:MM:SS.micro
+                if (line.StartsWith("out_time=") && totalSeconds > 0)
+                {
+                    var t = line.Substring("out_time=".Length);
+                    if (TimeSpan.TryParse(t, System.Globalization.CultureInfo.InvariantCulture, out var ts))
+                    {
+                        var pct = (int)Math.Clamp(ts.TotalSeconds / totalSeconds * 100.0, 0.0, 100.0);
+                        progress?.Report(pct);
+                    }
+                }
+                // out_time_ms is actually microseconds; divide by 1_000_000
+                else if (line.StartsWith("out_time_ms=") && totalSeconds > 0)
+                {
+                    if (double.TryParse(line.AsSpan("out_time_ms=".Length), out var micros))
+                    {
+                        var seconds = micros / 1_000_000.0;
+                        var pct = (int)Math.Clamp(seconds / totalSeconds * 100.0, 0.0, 100.0);
+                        progress?.Report(pct);
+                    }
+                }
+                else if (line == "progress=end")
+                {
+                    progress?.Report(100);
+                }
+            }
+
+            await p.WaitForExitAsync(cancellationToken).ConfigureAwait(false);
+
+            if (p.ExitCode != 0)
+                Log.Logger.Error("ffmpeg exited with {ExitCode}", p.ExitCode);
+        }
+
+        
+        internal static async Task<string> RunCommandAndGetStdoutAsStringAsync(string fileName, string command, bool returnStdErrInstead = false, CancellationToken cancellationToken = default)
+        {
+            Log.Logger.Verbose("Running command: {FileName} {Command}", fileName, command);
+            var startInfo = GetCustomFileProcessStartInfo(fileName, command);
+
+            using var process = new Process { StartInfo = startInfo, EnableRaisingEvents = false };
+
+            process.Start();
+
+            // Read both streams asynchronously.
+            Task<string> stdOutTask = process.StandardOutput.ReadToEndAsync();
+            Task<string> stdErrTask = process.StandardError.ReadToEndAsync();
+
+            await process.WaitForExitAsync(cancellationToken).ConfigureAwait(false);
+
+            var output = await stdOutTask.ConfigureAwait(false);
+            var error  = await stdErrTask.ConfigureAwait(false);
+
+            if (process.ExitCode != 0)
+            {
+                Log.Logger.Error(Strings.CommandThrewError0, command);
+                Log.Logger.Error(error);
+            }
+
+            Log.Logger.Verbose("Command executed successfully");
+            return returnStdErrInstead ? error : output;
+        }
+
 
         /// <summary>
         /// Run a command and return the stdout as a string
         /// </summary>
+        /// <param name="fileName"></param>
         /// <param name="command"></param>
+        /// <param name="returnStdErrInstead"></param>
         /// <returns></returns>
         internal static string RunCommandAndGetStdoutAsString(string fileName, string command, bool returnStdErrInstead = false)
         {
