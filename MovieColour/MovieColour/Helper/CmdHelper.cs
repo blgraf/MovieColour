@@ -19,7 +19,7 @@ namespace MovieColour.Helper
         /// <returns></returns>
         internal static byte[] RunCommandAndGetStdoutAsByteArray(string fileName, string command)
         {
-            Log.Logger.Verbose("Running command: {FileName} {Command}", fileName, command);
+            Log.Logger.Verbose(Strings.LogRunningCommand, fileName, command);
             var startInfo = GetCustomFileProcessStartInfo(fileName, command);
 
             using var process = new Process
@@ -63,7 +63,7 @@ namespace MovieColour.Helper
                 Log.Logger.Error(errorLog);
             }
 
-            Log.Logger.Verbose("Command executed successfully");
+            Log.Logger.Verbose(Strings.LogCommandExecutedSuccessfully);
             return ms.ToArray();
         }
         
@@ -112,13 +112,13 @@ namespace MovieColour.Helper
             await p.WaitForExitAsync(cancellationToken).ConfigureAwait(false);
 
             if (p.ExitCode != 0)
-                Log.Logger.Error("ffmpeg exited with {ExitCode}", p.ExitCode);
+                Log.Logger.Error(Strings.LogFfmpegExitedWithExitCode, p.ExitCode);
         }
 
         
         internal static async Task<string> RunCommandAndGetStdoutAsStringAsync(string fileName, string command, bool returnStdErrInstead = false, CancellationToken cancellationToken = default)
         {
-            Log.Logger.Verbose("Running command: {FileName} {Command}", fileName, command);
+            Log.Logger.Verbose(Strings.LogRunningCommand, fileName, command);
             var startInfo = GetCustomFileProcessStartInfo(fileName, command);
 
             using var process = new Process { StartInfo = startInfo, EnableRaisingEvents = false };
@@ -140,7 +140,7 @@ namespace MovieColour.Helper
                 Log.Logger.Error(error);
             }
 
-            Log.Logger.Verbose("Command executed successfully");
+            Log.Logger.Verbose(Strings.LogCommandExecutedSuccessfully);
             return returnStdErrInstead ? error : output;
         }
 
@@ -154,7 +154,7 @@ namespace MovieColour.Helper
         /// <returns></returns>
         internal static string RunCommandAndGetStdoutAsString(string fileName, string command, bool returnStdErrInstead = false)
         {
-            Log.Logger.Verbose("Running command: {FileName} {Command}", fileName, command);
+            Log.Logger.Verbose(Strings.LogRunningCommand, fileName, command);
             var startInfo = GetCustomFileProcessStartInfo(fileName, command);
 
             using var process = new Process { StartInfo = startInfo, EnableRaisingEvents = true };
@@ -194,7 +194,7 @@ namespace MovieColour.Helper
                 Log.Logger.Error(error);
             }
 
-            Log.Logger.Verbose("Command executed successfully");
+            Log.Logger.Verbose(Strings.LogCommandExecutedSuccessfully);
             return returnStdErrInstead ? error : output;
         }
 
@@ -223,7 +223,7 @@ namespace MovieColour.Helper
                 // If an exception is thrown (for example, if the file isn't found),
                 // the executable is not available.
                 // ToDo #3 - Ensure style/call matches the rest
-                Log.Logger.Error(e.Message, Strings.ErrWhileCheckCmdAvailable, exeName);
+                Log.Logger.Error(e, Strings.ErrWhileCheckCmdAvailable, exeName);
                 return false;
             }
         }
@@ -240,10 +240,10 @@ namespace MovieColour.Helper
         internal static byte[][] SplitStdoutByChunk(byte[] stdout, int chunkSize)
         {
             if (stdout == null || stdout.Length == 0)
-                throw new Exception("stdout is null or empty"); // ToDo #12
+                throw new ArgumentException(Strings.ErrorStdoutNullOrEmpty, nameof(stdout));
 
             if (stdout.Length % chunkSize != 0)
-                throw new Exception("stdout length is not a multiple of chunk size"); // ToDo #12
+                throw new ArgumentException(Strings.ErrorStdoutLengthNotMultipleOfChunkSize, nameof(chunkSize));
 
             var chunks = new byte[stdout.Length / chunkSize][];
             for (int i = 0; i < chunks.Length; i++)

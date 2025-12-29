@@ -216,7 +216,7 @@ namespace MovieColour.Helper
             switch (matches.Count)
             {
                 case 0:
-                    throw new Exception(string.Format(Strings.ErrorNoCropFound, result)); // ToDo #12
+                    throw new InvalidOperationException(string.Format(Strings.ErrorNoCropFound, result));
                 case > 1:
                     crop = matches[^1].Value;
                     break;
@@ -245,7 +245,7 @@ namespace MovieColour.Helper
             var videoDuration = result[..indexPeriod]; // remove the milliseconds
 
             if (!int.TryParse(videoDuration, out int duration))
-                throw new Exception(string.Format(Strings.ErrorDurationNotIntGot, videoDuration)); // ToDo #12
+                throw new FormatException(string.Format(Strings.ErrorDurationNotIntGot, videoDuration));
 
             return duration;
         }

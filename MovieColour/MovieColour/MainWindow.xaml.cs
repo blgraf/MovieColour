@@ -147,20 +147,22 @@ namespace MovieColour
 
             List<AnalysisMethod> methods = GetAnalysisMethods();
 
+            var completed = false;
+
             try
             {
                 if (methods.Count == 0)
-                    throw new Exception(Strings.ErrorMustSelectAnalysisMethod); // ToDo #12
+                    throw new InvalidOperationException(Strings.ErrorMustSelectAnalysisMethod);
 
                 var enableConversion = (bool)ChkBoxEnableConversion.IsChecked;
 
                 if (!int.TryParse(TxtBxWorkingScale.Text, out int scale))
-                    throw new Exception("non-int scale"); // ToDo #12
+                    throw new FormatException(Strings.ErrorScaleMustBeWholeNumber);
 
                 foreach (FileInfo fileInfo in _files)
                 {
                     Log.Logger.Information(Strings.ProcessingFile, fileInfo.Name);
-                    
+
                     ResetProgressBars();
 
                     var tmpfile = GetTmpfileName(fileInfo, scale);
@@ -193,25 +195,25 @@ namespace MovieColour
                     Log.Logger.Information(Strings.BatchSizeFrames, framesPerBatch);
                     Log.Logger.Information(Strings.TotalAmountOfBatches, batchCount);
 
-                    
+
                     var allResults = new List<AnalysisResult>();
 
                     var counter = 0;
                     var offset = 0d;
                     var hasMoreFrames = true;
-                    
+
                     var (totalProgress, totalTimer) = ProgressHelper.CreateProgressHandler(ProgressBarAnalysisTotal, LblProgressAnalysisTotalEta);
-                    
+
                     do
                     {
                         var (batchProgress, batchTimer) = ProgressHelper.CreateProgressHandler(ProgressBarAnalysisBatch, LblProgressAnalysisBatchEta);
-                        
+
                         offset = counter * framesPerBatch / fps;
                         counter++;
 
                         // Step 2
                         var frames = ImageHelper.GetXFrames(fi.FullName, offset, framesPerBatch, singleFrameSize);
-                        
+
                         if (frames.Length < framesPerBatch)
                             hasMoreFrames = false;
 
@@ -237,13 +239,13 @@ namespace MovieColour
                         //FrameMedianResult = allResults.SelectMany(x => x.FrameMedianResult).ToArray(),
                         FrameMostFrequentResult = allResults.SelectMany(x => x.FrameMostFrequentResult).ToArray()
                     };
-                    
+
                     totalTimer.Stop();
 
                     var (min, sec) = GetMinSecFromTimeSpan(totalTimer.Elapsed);
                     var avgSec = Math.Truncate(totalTimer.Elapsed.TotalSeconds / batchCount * 100) / 100;
                     Log.Logger.Information(Strings.AllBatchProcessTime, min, sec);
-                    Log.Logger.Information(Strings.AvgTimePerBatch,  avgSec);
+                    Log.Logger.Information(Strings.AvgTimePerBatch, avgSec);
 
                     // Step 6
                     CreateImages(fi, finalResult);
@@ -255,35 +257,24 @@ namespace MovieColour
                         _ = AsyncHelper.DeleteFileAsync(tmpfile);
                     }
                 }
+
+                completed = true;
+            }
+            catch (OperationCanceledException)
+            {
+                Log.Logger.Information(Strings.CancellationMessage);
             }
             catch (Exception ex)
             {
-                if (CancellationTokenSource.IsCancellationRequested)
-                {
-                    if (ex.Message.Equals("The operation was canceled."))
-                    {
-                        Log.Logger.Information(Strings.CancellationMessage);
-                    }
-                    else
-                    {
-                        Log.Logger.Error("{Exeption}", ex.Message);
-
-                        var dialog = new GenericDialog(ex.Message);
-                        dialog.Owner = this;
-                        dialog.ShowDialog();
-                    }
-                }
-                else
-                {
-                    Log.Logger.Error("{Exeption}", ex.Message);
-
-                    var dialog = new GenericDialog(ex.Message);
-                    dialog.Owner = this;
-                    dialog.ShowDialog();
-                }
+                HandleProcessingException(ex);
             }
-            Log.Logger.Information(Strings.AllFilesProcessed);
-            this.BtnStart.IsEnabled = true;
+            finally
+            {
+                if (completed)
+                    Log.Logger.Information(Strings.AllFilesProcessed);
+
+                this.BtnStart.IsEnabled = true;
+            }
         }
 
         /// <summary>
@@ -388,15 +379,15 @@ namespace MovieColour
         private async Task<AnalysisResult> AnalyseFrames(byte[][] files, List<AnalysisMethod> methods, IProgress<int> progress)
         {
             Log.Logger.Information(Strings.AnalysisStarted);
-            
+
             var movieColourHelper = new MovieColourHelper();
 
             movieColourHelper.Progress = progress;
-            
+
             var bucketCount = int.Parse(TxtBxBucketcount.Text);
 
             var result = await movieColourHelper.AnalyseFramesUsingMethods(files, bucketCount, methods);
-            
+
             Log.Logger.Information(Strings.AnalysisFinished);
             return result;
         }
@@ -536,6 +527,15 @@ namespace MovieColour
 
                 this.BtnStart.IsEnabled = false;
             }
+        }
+
+        private void HandleProcessingException(Exception ex)
+        {
+            Log.Logger.Error(ex, Strings.ErrorUnhandledExceptionWhileProcessing);
+
+            var dialog = new GenericDialog(ex.Message);
+            dialog.Owner = this;
+            dialog.ShowDialog();
         }
     }
 }
