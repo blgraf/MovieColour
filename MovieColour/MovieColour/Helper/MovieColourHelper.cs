@@ -1,5 +1,4 @@
-﻿using SixLabors.ImageSharp;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
@@ -12,22 +11,6 @@ namespace MovieColour.Helper
     internal class MovieColourHelper
 	{
 		internal IProgress<int> Progress { get; set; }
-		internal string InputFile { get; set; }
-
-        private static readonly ImageHelper imageHelper = new();
-
-        /// <summary>
-        /// Wrapper for ImageHelper.GetFramesFromMovie. Needed? ToDo
-        /// </summary>
-        /// <param name="workingScale"></param>
-        /// <param name="tmpPath"></param>
-        /// <param name="useGPU"></param>
-        /// <param name="ct"></param>
-        /// <returns></returns>
-        internal async Task ConvertMovieAsync (int workingScale, string tmpPath, bool useGPU, CancellationToken ct = default)
-		{
-			await imageHelper.ConvertToScale(InputFile, workingScale, tmpPath, useGPU, Progress, ct);
-		}
 
 		/// <summary>
 		/// Analyse frames using the specified methods

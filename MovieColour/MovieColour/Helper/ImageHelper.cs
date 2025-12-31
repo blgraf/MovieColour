@@ -23,7 +23,7 @@ namespace MovieColour.Helper
         /// <param name="useGPU">ToDo: #30 - Add support to use the GPU for video conversion</param>
         /// <param name="progress"></param>
         /// <param name="ct"></param>
-        internal async Task ConvertToScale(string filePath, int scale, string outputPath, bool useGPU, IProgress<int>? progress = null, CancellationToken ct = default)
+        internal static async Task ConvertToScale(string filePath, int scale, string outputPath, bool useGPU, IProgress<int>? progress = null, CancellationToken ct = default)
         {
             var crop = GetCropFromFile(filePath);
             var duration = GetDurationInSFromFile(filePath);
@@ -200,7 +200,7 @@ namespace MovieColour.Helper
         /// </summary>
         /// <param name="fullFilePath"></param>
         /// <returns></returns>
-        private string GetCropFromFile(string fullFilePath)
+        private static string GetCropFromFile(string fullFilePath)
         {
             Log.Logger.Information(Strings.DetectingCrop);
 

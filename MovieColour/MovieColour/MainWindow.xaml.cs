@@ -1,10 +1,4 @@
-﻿using Microsoft.Win32;
-using MovieColour.Helper;
-using MovieColour.Views;
-using Serilog;
-using SixLabors.ImageSharp;
-using SixLabors.ImageSharp.Processing;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
@@ -13,6 +7,12 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
+using Microsoft.Win32;
+using MovieColour.Helper;
+using MovieColour.Views;
+using Serilog;
+using SixLabors.ImageSharp;
+using SixLabors.ImageSharp.Processing;
 using static MovieColour.Helper.Enums;
 
 namespace MovieColour
@@ -355,13 +355,9 @@ namespace MovieColour
         {
             Log.Logger.Information(Strings.ConversionStarted);
 
-            var movieColourHelper = new MovieColourHelper();
-
             var (progress, watch) = ProgressHelper.CreateProgressHandler(ProgressBarConversion, LblProgressConversionEta);
-            movieColourHelper.Progress = progress;
-            movieColourHelper.InputFile = inputFile;
 
-            await movieColourHelper.ConvertMovieAsync(scale, tmpFile, (bool)ChkBoxGPU.IsChecked, CancellationTokenSource.Token);
+            await ImageHelper.ConvertToScale(inputFile, scale, tmpFile, (bool)ChkBoxGPU.IsChecked, progress, CancellationTokenSource.Token);
 
             watch.Stop();
             watch.Reset();
