@@ -17,7 +17,6 @@
             => 
             // -ss 90: start at 90 seconds
             // is an issue if the video is shorter than 90 seconds
-            // ToDo: #31 - Check for video length to adjust crop check
             $"-hide_banner -i \"{fullFilePath}\" -ss {secondsIntoVideo} -vframes 10 -vf cropdetect -f null -";
         
 

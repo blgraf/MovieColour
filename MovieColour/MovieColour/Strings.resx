@@ -213,6 +213,9 @@
   <data name="ErrorMustSelectAnalysisMethod" xml:space="preserve">
     <value>Must select at least one analysis method</value>
   </data>
+  <data name="ErrorScaleMustBeWholeNumber" xml:space="preserve">
+    <value>Scale must be a whole number.</value>
+  </data>
   <data name="SuccessAnalysedMovies" xml:space="preserve">
     <value>Successfully analysed the following movie(s):</value>
   </data>
@@ -324,6 +327,24 @@
   <data name="ErrorNoCropFound" xml:space="preserve">
     <value>Could not find crop from file with result {0}</value>
   </data>
+  <data name="ErrorUnhandledExceptionWhileProcessing" xml:space="preserve">
+    <value>Unhandled exception while processing files.</value>
+  </data>
+  <data name="ErrorStdoutLengthNotMultipleOfChunkSize" xml:space="preserve">
+    <value>Stdout length is not a multiple of chunk size.</value>
+  </data>
+  <data name="ErrorStdoutNullOrEmpty" xml:space="preserve">
+    <value>Stdout is null or empty.</value>
+  </data>
+  <data name="LogCommandExecutedSuccessfully" xml:space="preserve">
+    <value>Command executed successfully</value>
+  </data>
+  <data name="LogFfmpegExitedWithExitCode" xml:space="preserve">
+    <value>ffmpeg exited with {0}</value>
+  </data>
+  <data name="LogRunningCommand" xml:space="preserve">
+    <value>Running command: {0} {1}</value>
+  </data>
   <data name="TotalAmountOfBatches" xml:space="preserve">
     <value>Total amount of batches: {0}</value>
   </data>
@@ -335,5 +356,8 @@
   </data>
   <data name="XSec" xml:space="preserve">
     <value>{0} sec</value>
+  </data>
+  <data name="ErrorUnhandledExceptionWhileProcessing" xml:space="preserve">
+    <value>Unhandled exception while processing files.</value>
   </data>
 </root>
