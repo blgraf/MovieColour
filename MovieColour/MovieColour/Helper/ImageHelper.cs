@@ -25,8 +25,8 @@ namespace MovieColour.Helper
         /// <param name="ct"></param>
         internal static async Task ConvertToScale(string filePath, int scale, string outputPath, bool useGPU, IProgress<int>? progress = null, CancellationToken ct = default)
         {
-            var crop = GetCropFromFile(filePath);
-            var duration = GetDurationInSFromFile(filePath);
+            var crop = GetCropFromFile(filePath, ct);
+            var duration = GetDurationInSFromFile(filePath, ct);
             var command = FfCmds.FfmpegConvertCommand(filePath, crop, scale, outputPath);
 
             await CmdHelper.RunFfmpegWithTimeProgressAsync(FfCmds.Ffmpeg, command, duration, progress, ct);
@@ -153,9 +153,9 @@ namespace MovieColour.Helper
         /// </summary>
         /// <param name="fullFilePath"></param>
         /// <returns>The frame rate as a double</returns>
-        internal static double GetFps(string fullFilePath)
+        internal static double GetFps(string fullFilePath, CancellationToken ct = default)
         {
-            var output = CmdHelper.RunCommandAndGetStdoutAsString(FfCmds.Ffprobe, FfCmds.FfprobeGetFpsCommand(fullFilePath));
+            var output = CmdHelper.RunCommandAndGetStdoutAsString(FfCmds.Ffprobe, FfCmds.FfprobeGetFpsCommand(fullFilePath), false, ct);
 
             // This returns something like:
             // stream.0.avg_frame_rate="24000/1001"
@@ -172,9 +172,9 @@ namespace MovieColour.Helper
         /// </summary>
         /// <param name="fullFilePath"></param>
         /// <returns></returns>
-        internal static byte[] GetSingleFrameAsByteArray(string fullFilePath)
+        internal static byte[] GetSingleFrameAsByteArray(string fullFilePath, CancellationToken ct = default)
         {
-            return CmdHelper.RunCommandAndGetStdoutAsByteArray(FfCmds.Ffmpeg, FfCmds.FfmpegGetSingleFrameCommand(fullFilePath));
+            return CmdHelper.RunCommandAndGetStdoutAsByteArray(FfCmds.Ffmpeg, FfCmds.FfmpegGetSingleFrameCommand(fullFilePath), ct);
         }
 
         /// <summary>
@@ -185,9 +185,9 @@ namespace MovieColour.Helper
         /// <param name="x"></param>
         /// <param name="chunkSize">This represents the size of a single frame and is used to split the FFmpeg output</param>
         /// <returns></returns>
-        internal static byte[][] GetXFrames(string fullFilePath, double offsetInSeconds, int x, int chunkSize)
+        internal static byte[][] GetXFrames(string fullFilePath, double offsetInSeconds, int x, int chunkSize, CancellationToken ct = default)
         {
-            var stdout = CmdHelper.RunCommandAndGetStdoutAsByteArray(FfCmds.Ffmpeg, FfCmds.FfmpegGetXFramesCommand(fullFilePath, offsetInSeconds, x));
+            var stdout = CmdHelper.RunCommandAndGetStdoutAsByteArray(FfCmds.Ffmpeg, FfCmds.FfmpegGetXFramesCommand(fullFilePath, offsetInSeconds, x), ct);
             return CmdHelper.SplitStdoutByChunk(stdout, chunkSize);
         }
 
@@ -200,16 +200,16 @@ namespace MovieColour.Helper
         /// </summary>
         /// <param name="fullFilePath"></param>
         /// <returns></returns>
-        private static string GetCropFromFile(string fullFilePath)
+        private static string GetCropFromFile(string fullFilePath, CancellationToken ct = default)
         {
             Log.Logger.Information(Strings.DetectingCrop);
 
             var crop = string.Empty;
 
-            var duration = GetDurationInSFromFile(fullFilePath);
+            var duration = GetDurationInSFromFile(fullFilePath, ct);
 
             var command = FfCmds.FfmpegCropCommand(fullFilePath, duration / 4);
-            var result = CmdHelper.RunCommandAndGetStdoutAsString(FfCmds.Ffmpeg, command, true);
+            var result = CmdHelper.RunCommandAndGetStdoutAsString(FfCmds.Ffmpeg, command, true, ct);
 
             var matches = RegexHelper.CropRegex().Matches(result);
 
@@ -236,10 +236,10 @@ namespace MovieColour.Helper
         /// <param name="fullFilePath">The complete, non-relative, file path</param>
         /// <returns>The total duration in seconds</returns>
         /// <exception cref="Exception"></exception>
-        internal static int GetDurationInSFromFile(string fullFilePath)
+        internal static int GetDurationInSFromFile(string fullFilePath, CancellationToken ct = default)
         {
             var command = FfCmds.FfprobeGetDurationCommand(fullFilePath);
-            var result = CmdHelper.RunCommandAndGetStdoutAsString(FfCmds.Ffprobe, command);
+            var result = CmdHelper.RunCommandAndGetStdoutAsString(FfCmds.Ffprobe, command, false, ct);
 
             var indexPeriod = result.IndexOf('.');
             var videoDuration = result[..indexPeriod]; // remove the milliseconds

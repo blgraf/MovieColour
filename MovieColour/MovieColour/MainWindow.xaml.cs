@@ -57,7 +57,6 @@ namespace MovieColour
         private void BtnCancel_OnClick(object sender, RoutedEventArgs e)
         {
             CancellationTokenSource.Cancel();
-            this.BtnStart.IsEnabled = true;
             this.BtnCancel.IsEnabled = false;
         }
 
@@ -140,6 +139,7 @@ namespace MovieColour
         {
             CancellationTokenSource.Dispose();
             CancellationTokenSource = new CancellationTokenSource();
+            var cancellationToken = CancellationTokenSource.Token;
             this.BtnCancel.IsEnabled = true;
 
             this.BtnStart.IsEnabled = false;
@@ -161,6 +161,7 @@ namespace MovieColour
 
                 foreach (FileInfo fileInfo in _files)
                 {
+                    cancellationToken.ThrowIfCancellationRequested();
                     Log.Logger.Information(Strings.ProcessingFile, fileInfo.Name);
 
                     ResetProgressBars();
@@ -171,7 +172,7 @@ namespace MovieColour
 
                     if (enableConversion)
                     {
-                        await ConvertMovie(fi.FullName, tmpfile, scale);
+                        await ConvertMovie(fi.FullName, tmpfile, scale, cancellationToken);
                         fi = new FileInfo(tmpfile);
                     }
 
@@ -184,11 +185,11 @@ namespace MovieColour
                     // Step 6. Create images
 
                     // Step 0
-                    var fps = ImageHelper.GetFps(fi.FullName);
-                    var duration = ImageHelper.GetDurationInSFromFile(fi.FullName);
+                    var fps = ImageHelper.GetFps(fi.FullName, cancellationToken);
+                    var duration = ImageHelper.GetDurationInSFromFile(fi.FullName, cancellationToken);
                     var frameCount = fps * duration;
                     // Step 1
-                    var singleFrameSize = ImageHelper.GetSingleFrameAsByteArray(fi.FullName).Length;
+                    var singleFrameSize = ImageHelper.GetSingleFrameAsByteArray(fi.FullName, cancellationToken).Length;
                     var framesPerBatch = int.MaxValue / singleFrameSize;
                     var batchCount = Math.Ceiling(frameCount / framesPerBatch);
 
@@ -206,19 +207,20 @@ namespace MovieColour
 
                     do
                     {
+                        cancellationToken.ThrowIfCancellationRequested();
                         var (batchProgress, batchTimer) = ProgressHelper.CreateProgressHandler(ProgressBarAnalysisBatch, LblProgressAnalysisBatchEta);
 
                         offset = counter * framesPerBatch / fps;
                         counter++;
 
                         // Step 2
-                        var frames = ImageHelper.GetXFrames(fi.FullName, offset, framesPerBatch, singleFrameSize);
+                        var frames = ImageHelper.GetXFrames(fi.FullName, offset, framesPerBatch, singleFrameSize, cancellationToken);
 
                         if (frames.Length < framesPerBatch)
                             hasMoreFrames = false;
 
                         // Step 3
-                        var intermediateResult = await AnalyseFrames(frames, methods, batchProgress);
+                        var intermediateResult = await AnalyseFrames(frames, methods, batchProgress, cancellationToken);
                         allResults.Add(intermediateResult);
                         var batchSec = Math.Truncate(batchTimer.Elapsed.TotalSeconds * 100) / 100; // Get at most 2 decimal values
                         Log.Logger.Information(Strings.BatchXTookYs, counter, batchSec);
@@ -247,6 +249,8 @@ namespace MovieColour
                     Log.Logger.Information(Strings.AllBatchProcessTime, min, sec);
                     Log.Logger.Information(Strings.AvgTimePerBatch, avgSec);
 
+                    cancellationToken.ThrowIfCancellationRequested();
+
                     // Step 6
                     CreateImages(fi, finalResult);
 
@@ -274,6 +278,7 @@ namespace MovieColour
                     Log.Logger.Information(Strings.AllFilesProcessed);
 
                 this.BtnStart.IsEnabled = true;
+                this.BtnCancel.IsEnabled = false;
             }
         }
 
@@ -351,13 +356,13 @@ namespace MovieColour
         /// <param name="tmpFile"></param>
         /// <param name="scale"></param>
         /// <returns></returns>
-        private async Task ConvertMovie(string inputFile, string tmpFile, int scale)
+        private async Task ConvertMovie(string inputFile, string tmpFile, int scale, CancellationToken cancellationToken)
         {
             Log.Logger.Information(Strings.ConversionStarted);
 
             var (progress, watch) = ProgressHelper.CreateProgressHandler(ProgressBarConversion, LblProgressConversionEta);
 
-            await ImageHelper.ConvertToScale(inputFile, scale, tmpFile, (bool)ChkBoxGPU.IsChecked, progress, CancellationTokenSource.Token);
+            await ImageHelper.ConvertToScale(inputFile, scale, tmpFile, (bool)ChkBoxGPU.IsChecked, progress, cancellationToken);
 
             watch.Stop();
             watch.Reset();
@@ -372,7 +377,7 @@ namespace MovieColour
         /// <param name="methods"></param>
         /// <param name="progress"></param>
         /// <returns></returns>
-        private async Task<AnalysisResult> AnalyseFrames(byte[][] files, List<AnalysisMethod> methods, IProgress<int> progress)
+        private async Task<AnalysisResult> AnalyseFrames(byte[][] files, List<AnalysisMethod> methods, IProgress<int> progress, CancellationToken cancellationToken)
         {
             Log.Logger.Information(Strings.AnalysisStarted);
 
@@ -382,7 +387,7 @@ namespace MovieColour
 
             var bucketCount = int.Parse(TxtBxBucketcount.Text);
 
-            var result = await movieColourHelper.AnalyseFramesUsingMethods(files, bucketCount, methods);
+            var result = await movieColourHelper.AnalyseFramesUsingMethods(files, bucketCount, methods, cancellationToken);
 
             Log.Logger.Information(Strings.AnalysisFinished);
             return result;

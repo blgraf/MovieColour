@@ -17,7 +17,7 @@ namespace MovieColour.Helper
         /// </summary>
         /// <param name="command"></param>
         /// <returns></returns>
-        internal static byte[] RunCommandAndGetStdoutAsByteArray(string fileName, string command)
+        internal static byte[] RunCommandAndGetStdoutAsByteArray(string fileName, string command, CancellationToken cancellationToken = default)
         {
             Log.Logger.Verbose(Strings.LogRunningCommand, fileName, command);
             var startInfo = GetCustomFileProcessStartInfo(fileName, command);
@@ -28,6 +28,7 @@ namespace MovieColour.Helper
                 EnableRaisingEvents = true
             };
             var stdErrBuilder = new StringBuilder();
+            using var registration = cancellationToken.Register(() => TryKillProcess(process));
 
             process.ErrorDataReceived += (sender, e) =>
             {
@@ -42,15 +43,19 @@ namespace MovieColour.Helper
             process.BeginErrorReadLine();
 
             using var ms = new MemoryStream();
-            var outputStream = process.StandardOutput.BaseStream as FileStream;
+            var outputStream = process.StandardOutput.BaseStream;
 
             var buffer = new byte[4096];
             int bytesRead;
 
             while ((bytesRead = outputStream.Read(buffer, 0, buffer.Length)) > 0)
             {
+                if (cancellationToken.IsCancellationRequested)
+                    break;
                 ms.Write(buffer, 0, bytesRead);
             }
+
+            cancellationToken.ThrowIfCancellationRequested();
 
             // Wait for ffmpeg to exit
             process.WaitForExit();
@@ -71,6 +76,7 @@ namespace MovieColour.Helper
         {
             var si = GetCustomFileProcessStartInfo(fileName, arguments);
             using var p = new Process { StartInfo = si, EnableRaisingEvents = false };
+            using var registration = cancellationToken.Register(() => TryKillProcess(p));
 
             p.Start();
 
@@ -122,6 +128,7 @@ namespace MovieColour.Helper
             var startInfo = GetCustomFileProcessStartInfo(fileName, command);
 
             using var process = new Process { StartInfo = startInfo, EnableRaisingEvents = false };
+            using var registration = cancellationToken.Register(() => TryKillProcess(process));
 
             process.Start();
 
@@ -152,7 +159,7 @@ namespace MovieColour.Helper
         /// <param name="command"></param>
         /// <param name="returnStdErrInstead"></param>
         /// <returns></returns>
-        internal static string RunCommandAndGetStdoutAsString(string fileName, string command, bool returnStdErrInstead = false)
+        internal static string RunCommandAndGetStdoutAsString(string fileName, string command, bool returnStdErrInstead = false, CancellationToken cancellationToken = default)
         {
             Log.Logger.Verbose(Strings.LogRunningCommand, fileName, command);
             var startInfo = GetCustomFileProcessStartInfo(fileName, command);
@@ -160,6 +167,7 @@ namespace MovieColour.Helper
             using var process = new Process { StartInfo = startInfo, EnableRaisingEvents = true };
             var stdOutBuilder = new StringBuilder();
             var stdErrBuilder = new StringBuilder();
+            using var registration = cancellationToken.Register(() => TryKillProcess(process));
 
             process.OutputDataReceived += (sender, e) =>
             {
@@ -182,7 +190,16 @@ namespace MovieColour.Helper
             process.BeginOutputReadLine();
             process.BeginErrorReadLine();
 
-            process.WaitForExit();
+            while (!process.WaitForExit(100))
+            {
+                if (cancellationToken.IsCancellationRequested)
+                {
+                    TryKillProcess(process);
+                    cancellationToken.ThrowIfCancellationRequested();
+                }
+            }
+
+            cancellationToken.ThrowIfCancellationRequested();
 
             var output = stdOutBuilder.ToString();
             var error = stdErrBuilder.ToString();
@@ -279,6 +296,24 @@ namespace MovieColour.Helper
                 RedirectStandardOutput = true,
                 RedirectStandardError = true
             };
+        }
+
+        private static void TryKillProcess(Process process)
+        {
+            try
+            {
+                if (!process.HasExited)
+                    process.Kill(true);
+            }
+            catch (InvalidOperationException)
+            {
+                Log.Logger.Verbose(Strings.ErrorProcessAlreadyExited);
+            }
+            catch (System.ComponentModel.Win32Exception e)
+            {
+                Log.Logger.Verbose(Strings.ErrorUnableToKillProcess);
+                Log.Logger.Verbose(e.Message);
+            }
         }
 
         #endregion

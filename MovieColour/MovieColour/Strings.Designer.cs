@@ -439,6 +439,15 @@ namespace MovieColour {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Process already exited while attempting cancellation..
+        /// </summary>
+        public static string ErrorProcessAlreadyExited {
+            get {
+                return ResourceManager.GetString("ErrorProcessAlreadyExited", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Scale must be a whole number..
         /// </summary>
         public static string ErrorScaleMustBeWholeNumber {
@@ -462,6 +471,15 @@ namespace MovieColour {
         public static string ErrorStdoutNullOrEmpty {
             get {
                 return ResourceManager.GetString("ErrorStdoutNullOrEmpty", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Unable to terminate process during cancellation..
+        /// </summary>
+        public static string ErrorUnableToKillProcess {
+            get {
+                return ResourceManager.GetString("ErrorUnableToKillProcess", resourceCulture);
             }
         }
         

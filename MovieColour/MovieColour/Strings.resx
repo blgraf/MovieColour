@@ -357,7 +357,10 @@
   <data name="XSec" xml:space="preserve">
     <value>{0} sec</value>
   </data>
-  <data name="ErrorUnhandledExceptionWhileProcessing" xml:space="preserve">
-    <value>Unhandled exception while processing files.</value>
+  <data name="ErrorProcessAlreadyExited" xml:space="preserve">
+    <value>Process already exited while attempting cancellation.</value>
+  </data>
+  <data name="ErrorUnableToKillProcess" xml:space="preserve">
+    <value>Unable to terminate process during cancellation.</value>
   </data>
 </root>
