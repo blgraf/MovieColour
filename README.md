@@ -7,7 +7,7 @@ With the help of [FFmpeg](https://ffmpeg.org/) to extract frames, the program an
 ## Installation
 Download the [latest release](https://github.com/blgraf/MovieColour/releases/latest) and run the `exe` file.  
 ### Requirements
-- .NET 8
+- .NET 10
 - Windows 10+
 - FFmpeg & FFprobe to be run from the command prompt
 - Something like at least 5GB of RAM (everything except conversion is done in memory)
